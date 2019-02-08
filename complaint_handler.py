@@ -164,7 +164,7 @@ def Login(url):
             browser.set_page_load_timeout(100) 
             browser.get(url)
             #browser.get('http://cwqa/CATSWebNET/')
-            browser.get('http://cwprod/CATSWebNET/')
+            browser.get('http://cwqa/CATSWebNET/')
             
 
             sessionFlag, returnMsg = checkSession(browser.page_source)
