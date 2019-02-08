@@ -77,12 +77,7 @@ def getCFDetails(htmlSource):
         center = soup.find_all('center')
         tables = soup.find_all('table',{'id':'TBCALogForm'})
 
-        #Username
-        td = [tr.find_all('td', {'id':'TDAssignedTo'}) for tr in tables[0].find_all('tr')]
-        for eachtd in td:
-            if eachtd:
-                data = [each.find('br').next_sibling for each in eachtd]
-        username = data[0].text.strip()
+        username = checkUsername(htmlSource)
 
         #Medical event
         td = [tr.find_all('td', {'id':'TDStandardText069'}) for tr in tables[0].find_all('tr')]
@@ -292,7 +287,7 @@ def preview(CFnum, main_url):
 
 def complaintProcess(CFnum, url):
     print('inside complaintProcess', url)
-    pjs_file = '\\\\'.join(os.path.join(current_folder,"chromedriver.exe").split('\\'))
+    pjs_file = '\\\\'.join(os.path.join(current_folder,"phantomjs.exe").split('\\'))
     statusMsg = '' 
     statusFlag = False
 
