@@ -76,8 +76,6 @@ class LoginPage(tk.Frame):
         self.flagQueue = Queue.Queue()
         self.controller = controller
         self.clicked = clicked
-        self.clipboardUrl = clipboard.GetData()
-
 
         style = Style()
         #style.configure("BW.TLabel", font = ('Helvetica','10'),foreground="#64B23B")
@@ -481,7 +479,7 @@ class ThreadedClient:
             messagebox.showinfo('Error!', 'Enter catsweb link')
             return
 
-        elif 'http://cwprod/CATSWebNET/' not in url:
+        elif 'http://cwqa/CATSWebNET/'.lower() not in url.lower():
             messagebox.showinfo('Error!', 'Invalid url')
             return
 
