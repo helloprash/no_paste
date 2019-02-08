@@ -52,10 +52,9 @@ def checkUsername(htmlSource):
         for eachtd in td:
             if eachtd:
                 data = [each.parent.find('font').findNext('font') for each in eachtd]
-                print(data[0].text.strip().replace('User ', '').replace('may have pending personal tasks.', ''))
                 userName = data[0].text.strip().replace('User ', '').replace('may have pending personal tasks.', '')
                 userName = re.sub(r'\([^)]*\)', '', userName)
-                return userName
+                return userName[:-1]
 
 
     except Exception as e:
@@ -71,6 +70,17 @@ def actionSubmit(browser,ID):
     return browser
     
 def getCFDetails(htmlSource):
+    username = 'no user'
+    RDPC = 'No RDPC'
+    medical_event = 'No ME'
+    pREflag = False
+    step = 'No Step'
+    productType = 'No ptype'
+    productFormula = 'No pformula'
+    serialNum = 'No ser'
+    IR = False
+    IRstep = 'No IRStep'
+    IRnum = 'No IRNum'
     try:
         soup = BS(htmlSource, "lxml")
         #soup = BS(open(file_path), "lxml")
@@ -78,6 +88,7 @@ def getCFDetails(htmlSource):
         tables = soup.find_all('table',{'id':'TBCALogForm'})
 
         username = checkUsername(htmlSource)
+        print('username is: ',username)
 
         #Medical event
         td = [tr.find_all('td', {'id':'TDStandardText069'}) for tr in tables[0].find_all('tr')]
@@ -85,6 +96,39 @@ def getCFDetails(htmlSource):
             if eachtd:
                 data = [each.find('font') for each in eachtd]
         medical_event = data[0].text.strip()
+
+        #Current step
+        td = [tr.find_all('td', {'id':'TDStandardText003'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        step = data[0].text.strip()
+
+        #RDPC
+        td = [tr.find_all('td', {'id':'TDStandardMemo013'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        RDPC = data[0].text.strip()
+
+
+         #Product
+        p_tag = soup.find(text='Products').parent
+        font_tag = p_tag.parent
+        center_tag = font_tag.parent
+        next_center_tag = center_tag.findNext('center').findNext('center')
+        tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
+        td = [tr.find_all('td', {'id':'TDRowItem16'}) for tr in tables[0].find_all('tr')]
+        td1 = [tr.find_all('td', {'id':'TDRowItem14'}) for tr in tables[0].find_all('tr')]
+        td2 = [tr.find_all('td', {'id':'TDRowItem19'}) for tr in tables[0].find_all('tr')]
+        for eachtd, eachtd1, eachtd2 in zip(td,td1,td2):
+            if (eachtd, eachtd1, eachtd2):
+                data = [each.find('font') for each in eachtd]
+                data1 = [each.find('font') for each in eachtd1]
+                data2 = [each.find('font') for each in eachtd2]
+        productFormula = data[0].text.strip()
+        productType = data1[0].text.strip()
+        serialNum = data2[0].text.strip()
 
         #pRE
         pREflag = False
@@ -102,41 +146,6 @@ def getCFDetails(htmlSource):
                 if data[j] == 'Yes':
                     pREflag = True
         
-        print(pREflag)
-
-    
-
-        #RDPC
-        td = [tr.find_all('td', {'id':'TDStandardMemo013'}) for tr in tables[0].find_all('tr')]
-        for eachtd in td:
-            if eachtd:
-                data = [each.find('font') for each in eachtd]
-        RDPC = data[0].text.strip()
-        
-        #Current step
-        td = [tr.find_all('td', {'id':'TDStandardText003'}) for tr in tables[0].find_all('tr')]
-        for eachtd in td:
-            if eachtd:
-                data = [each.find('font') for each in eachtd]
-        step = data[0].text.strip()
-
-        #Product
-        p_tag = soup.find(text='Products').parent
-        font_tag = p_tag.parent
-        center_tag = font_tag.parent
-        next_center_tag = center_tag.findNext('center').findNext('center')
-        tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
-        td = [tr.find_all('td', {'id':'TDRowItem16'}) for tr in tables[0].find_all('tr')]
-        td1 = [tr.find_all('td', {'id':'TDRowItem14'}) for tr in tables[0].find_all('tr')]
-        td2 = [tr.find_all('td', {'id':'TDRowItem19'}) for tr in tables[0].find_all('tr')]
-        for eachtd, eachtd1, eachtd2 in zip(td,td1,td2):
-            if (eachtd, eachtd1, eachtd2):
-                data = [each.find('font') for each in eachtd]
-                data1 = [each.find('font') for each in eachtd1]
-                data2 = [each.find('font') for each in eachtd2]
-        productFormula = data[0].text.strip()
-        productType = data1[0].text.strip()
-        serialNum = data2[0].text.strip()
 
         #Investigation report
         try:
@@ -162,7 +171,7 @@ def getCFDetails(htmlSource):
         return(True,username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,IR,IRstep,IRnum)
     except Exception as err:
         print(err)
-        return(False,'username','RDPC','medical_event','pREflag','step','productType','productFormula','serialNum','IR','IRstep','IRnum')
+        return(False, username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,IR,IRstep,IRnum)
 
 
 def Login(url, site):
@@ -356,13 +365,17 @@ def complaintProcess(CFnum, url):
                         '140':steps.step999
                     }
 
-    if not flag:
+    if not flag and (current_step == '020' or '030'):
         browser.quit()
-        return (True, CFnum,'This is not a valid complaint folder number', False, fileFlag)
+        return (True, CFnum,'Error! The current step is {}'.format(current_step), False, fileFlag)
 
     elif medical_event == 'Yes':
         browser.quit()
         return (True, CFnum,'Medical event is Yes. Cannot process', False, fileFlag)
+
+    elif not flag:
+        browser.quit()
+        return (True, CFnum,'This is not a valid complaint folder number', False, fileFlag)
 
     elif pREflag:
         browser.quit()
