@@ -8,6 +8,7 @@ from selenium.common.exceptions import NoSuchElementException
 import urllib3
 from subprocess import Popen
 import time
+import re
 import steps
 
 
@@ -30,10 +31,37 @@ def checkSession(htmlSource):
         for eachtd in td:
             if eachtd:
                 data = eachtd[0].text.strip()
+                print(data)
         return False, data
 
     except:
         return True, 'None'
+
+def checkUsername(htmlSource):
+    closeStatus = False
+    try:
+        soup = BS(htmlSource, "lxml")
+        #soup = BS(open(htmlSource,encoding="utf8"), "lxml")
+
+        #Username
+        tables = soup.find_all('table',{'id':'TBTopTable'})
+        rowData = [tr for tr in tables[0].find_all('tr')]
+
+        td = rowData[1].find_all('td')
+
+        for eachtd in td:
+            if eachtd:
+                data = [each.parent.find('font').findNext('font') for each in eachtd]
+                print(data[0].text.strip().replace('User ', '').replace('may have pending personal tasks.', ''))
+                userName = data[0].text.strip().replace('User ', '').replace('may have pending personal tasks.', '')
+                userName = re.sub(r'\([^)]*\)', '', userName)
+                return userName
+
+
+    except Exception as e:
+        print(e)
+        return 'Error'
+
 
 
 def actionSubmit(browser,ID):
@@ -142,7 +170,7 @@ def getCFDetails(htmlSource):
         return(False,'username','RDPC','medical_event','pREflag','step','productType','productFormula','serialNum','IR','IRstep','IRnum')
 
 
-def Login(url):
+def Login(url, site):
     pjs_file = '\\\\'.join(os.path.join(current_folder,"phantomjs.exe").split('\\'))
     print(pjs_file)
 
@@ -163,19 +191,30 @@ def Login(url):
             browser.implicitly_wait(3)
             browser.set_page_load_timeout(100) 
             browser.get(url)
-            #browser.get('http://cwqa/CATSWebNET/')
-            browser.get('http://cwqa/CATSWebNET/')
-            
 
+            if site:
+                browser.get('http://cwprod/CATSWebNET/')
+
+            else:
+                browser.get('http://cwqa/CATSWebNET/')
+
+            
             sessionFlag, returnMsg = checkSession(browser.page_source)
+
 
             if not sessionFlag:
                 current_url = browser.current_url
                 browser.quit()
-                return ('Session expired. Please enter your logged in url', current_url, sessionFlag, fileFlag)
+                return ('Session expired. Please enter your logged in url', userName, current_url, sessionFlag, fileFlag)
 
+            userName = checkUsername(browser.page_source)
+            
+            if site:
+                userName+=' (Prod)'
+            else:
+                userName+=' (QA)'
             print(browser.current_url)
-            return ('Please enter your login information:', browser.current_url, True, fileFlag)
+            return ('Please enter your login information:', userName, browser.current_url, True, fileFlag)
 
               
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError): 
@@ -253,7 +292,9 @@ def preview(CFnum, main_url):
 
 def complaintProcess(CFnum, url):
     print('inside complaintProcess', url)
-    pjs_file = '\\\\'.join(os.path.join(current_folder,"phantomjs.exe").split('\\'))
+    pjs_file = '\\\\'.join(os.path.join(current_folder,"chromedriver.exe").split('\\'))
+    statusMsg = '' 
+    statusFlag = False
 
     fileFlag = True
     my_file = Path(pjs_file)
@@ -263,26 +304,23 @@ def complaintProcess(CFnum, url):
         return False, CFnum, 'phantomjs.exe file not found', False, fileFlag
     
     print(pjs_file)
+   
     '''
     chrome_options = Options()
     #chrome_options.add_argument("--headless")
     #chrome_options.add_argument("--window-size=1920x1080")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("disable-extensions")
+   
+    browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
     '''
-    #browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
-            
-    browser = webdriver.PhantomJS(executable_path = pjs_file, desired_capabilities={'phantomjs.page.settings.resourceTimeout': '5000'})
-    browser.implicitly_wait(3)
-    browser.set_page_load_timeout(100)
-
     
     while True:
         try:
             browser = webdriver.PhantomJS(executable_path = pjs_file, desired_capabilities={'phantomjs.page.settings.resourceTimeout': '5000'})
             browser.implicitly_wait(3)
             browser.set_page_load_timeout(100)
-    
+
             browser.get(url)
 
             sessionFlag, returnMsg = checkSession(browser.page_source)
@@ -350,8 +388,8 @@ def complaintProcess(CFnum, url):
         return (True, CFnum, 'Complaint folder not processable. Kindly check RDPC or product records.', False, fileFlag)
     else:
         try:
-            if not IR and (productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire'):
-                if (serialNum[0] != '6'):
+            if not IR and ((productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
+                if (serialNum[0] == '6'):
                     if current_step == '140':
                         CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                     else:
@@ -361,19 +399,19 @@ def complaintProcess(CFnum, url):
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)
                 else:
                     browser.quit()
-                    return (True, CFnum, 'Error! LOT number starts with 6 for PI return', False, fileFlag)   
+                    return (True, CFnum, 'Error! LOT number does not start with 6 for PI return', False, fileFlag)   
             
-            elif not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == '0180-1401') \
+            elif not IR and ((RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
             or ((RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
+                print('Inside else part')
                 if current_step == '140':
                     CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                 else:
                     CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-                
+                    
                 browser.quit()
                 return (True, CFnum, statusMsg, statusFlag, fileFlag) 
             else:
-                print('Inside else part')
                 CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                 print(CFnum, statusMsg, statusFlag)
                 browser.quit()

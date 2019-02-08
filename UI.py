@@ -24,10 +24,11 @@ current_folder = os.getcwd()
 
 
 class ComplaintHandlerUI(tk.Tk):
-    def __init__(self, queue, clicked, *args, **kwargs):
+    def __init__(self, queue, userNameQueue, clicked, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
         self.queue = queue
+        self.userNameQueue = userNameQueue
 
         self.geometry("400x460")
         self.resizable(width=False, height=False)
@@ -73,6 +74,7 @@ class LoginPage(tk.Frame):
 
         self.running = 1
         self.queue = controller.queue
+        self.userNameQueue = controller.userNameQueue
         self.flagQueue = Queue.Queue()
         self.controller = controller
         self.clicked = clicked
@@ -158,8 +160,10 @@ class PageOne(tk.Frame):
         self.running = 1
         self.main_url = ''
         self.treeSelection = ''
+        self.userName = 'ABCDEFGHIJKL'
         self.item_iid = tuple()
         self.queue = controller.queue
+        self.userNameQueue = controller.userNameQueue
         self.infoQueue = Queue.Queue()
         self.CFnumQueue = Queue.Queue()
         self.flagQueue = Queue.Queue()
@@ -180,7 +184,8 @@ class PageOne(tk.Frame):
         self.CFnum = Entry(self, validate="key", validatecommand=(self.register(self.validate), '%P'))
         self.CFnum.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.main_url))
 
-        self.msg = Label(self, style="BW.TLabel")
+        self.msg = Label(self)
+        self.msg.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
         
         self.authorName = Label(self, text=u'\u00a9'+" Designed & Developed by Prashanth Kumar & Andrew Jesiah")
         self.authorName.config(font = ('Montserrat','8'),foreground="#112D25", background="#FFFFFF")        
@@ -224,12 +229,11 @@ class PageOne(tk.Frame):
         self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
         self.previewButton['font'] = helv36
 
-
-        self.CF_number.place(x='35', y='20')
-        self.CFnum.place(x='157', y='20')
-        self.previewButton.place(x='300', y='17')
-        #self.msg.place(x='18', y='40')
-        self.button1.place(x='200', y='80', anchor='center')
+        self.msg.place(x='5', y='7')
+        self.CF_number.place(x='35', y='45')
+        self.CFnum.place(x='157', y='45')
+        self.previewButton.place(x='300', y='42')
+        self.button1.place(x='200', y='105', anchor='center')
         self.tree.place(x='0', y='140')
         self.delButton.place(x='4', y='385')
         self.button2.place(x='315', y='385')
@@ -352,7 +356,21 @@ class PageOne(tk.Frame):
         while self.queue.qsize( ):
             try:
                 self.main_url = self.queue.get(0)
-                self.msg.config(text = self.main_url)
+                # Check contents of message and do whatever is needed. As a
+                # simple test, print it (in real life, you would
+                # suitably update the GUI's display in a richer fashion).
+                
+            except Queue.Empty:
+                # just on general principles, although we don't
+                # expect this branch to be taken in this case
+                pass
+
+    def processUserNameQueueIncoming(self):
+        """Handle all messages currently in the queue, if any."""
+        while self.userNameQueue.qsize( ):
+            try:
+                self.userName = self.userNameQueue.get(0)
+                self.msg.config(text = 'Logged in as '+self.userName)
                 # Check contents of message and do whatever is needed. As a
                 # simple test, print it (in real life, you would
                 # suitably update the GUI's display in a richer fashion).
@@ -404,10 +422,11 @@ class ThreadedClient:
         self.running = 1
 
         # Create the queue
-        self.queue = Queue.Queue( )
+        self.queue = Queue.Queue()
+        self.userNameQueue = Queue.Queue()
 
         # Set up the GUI part
-        self.gui = ComplaintHandlerUI(self.queue, self.clicked)
+        self.gui = ComplaintHandlerUI(self.queue, self.userNameQueue, self.clicked)
 
         self.login_page = self.gui.get_page(LoginPage)
         self.page_one = self.gui.get_page(PageOne)
@@ -420,6 +439,7 @@ class ThreadedClient:
     def periodicCall(self):
         self.page_one.processQueueIncoming()
         self.page_one.processinfoQueueIncoming()
+        self.page_one.processUserNameQueueIncoming()
         
         #Check every 200 ms if there is an active internet connection
         
@@ -475,31 +495,39 @@ class ThreadedClient:
 
     def clicked(self, url):
         print('Url: ', url)
+        site = True
         if url == 'Insert link here' or len(url) == 0:
             messagebox.showinfo('Error!', 'Enter catsweb link')
             return
 
-        elif 'http://cwqa/CATSWebNET/'.lower() not in url.lower():
+        elif 'http://cwprod/CATSWebNET/'.lower() in url.lower():
+            site = True
+
+        elif 'http://cwqa/CATSWebNET/'.lower() in url.lower():
+            site = False
+
+        else:
             messagebox.showinfo('Error!', 'Invalid url')
             return
 
         self.running = 1
         self.login_page.message.config(text='')
         self.login_page.loginStatusMsg.config(text='Logging in... Please wait')
-        self.thread1 = threading.Thread(target=self.workerThread1, args=(url,))
+        self.thread1 = threading.Thread(target=self.workerThread1, args=(url, site))
         self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
         self.thread1.start()
 
 
-    def workerThread1(self, url):
+    def workerThread1(self, url, site):
         while self.running:
             self.login_page.btn.config(state = 'disabled')
-            loginMsg, url, flag, fileFlag = complaint_handler.Login(url)
-            print(loginMsg, url, flag, fileFlag )
+            loginMsg, userName, url, flag, fileFlag = complaint_handler.Login(url, site)
+            print('Logged in', site, loginMsg, userName, url, flag, fileFlag )
 
             if flag:
                 self.login_page.message.config(text='Please copy your CATSWeb logged in url:', font = ('Helvetica','11'), foreground="#638213", background="#FFFFFF")
                 self.login_page.queue.put(url)
+                self.login_page.userNameQueue.put(userName)
                 self.page_one.CFnum.focus()
                 self.page_one.button1.config(state = 'normal')
                 self.login_page.controller.show_frame(PageOne)

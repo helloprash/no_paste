@@ -75,9 +75,11 @@ def step90(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula = 
         browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
         pRE(browser,CFnum)
-        step140(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-    
-    except NoSuchElementException:
+        CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+        return CFnum, closeMsg, closeFlag
+
+    except NoSuchElementException as e:
+        print(e)
         return CFnum, 'Page load error', False
     except Exception as e:
         return CFnum, e, False
@@ -86,15 +88,16 @@ def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
     try:
         #Step 140
         pRE(browser,CFnum)
+        print(CFnum, RDPC, productType, productFormula,serialNum, username,IR,IRnum)
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
         
-        summary = 'This complaint meets the criteria for no further investigation per Johnson &Johnson Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
+        summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
         Product_Deficiency_Identified = 'No'
         Complaint_trend_similar = 'Yes'
         Internal_CAPA_requested = 'No'
         Reason_for_no_CAPA = 'Product Deficiency not identified'
         
-        if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == '0180-1401')) \
+        if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
         or (not IR and (RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
             if not IR:
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
@@ -108,8 +111,13 @@ def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
             browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").send_keys(no_CAPA_comments)
 
             
-        elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productFamily == 'Patient Interface') and (serialNum[0] != '6'):
-            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+        elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productType == 'Patient Interface') and (serialNum[0] == '6'):
+            if not IR:
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+            else:
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+
             Complaint_trend_similar = 'Other (explain in comments)'
             complaint_trend_comments = 'Due to an increase in PI complaints, NR-0099700 was opened to address this issue.'
             precedent_CAPA = 'NR-0099700'
@@ -157,9 +165,11 @@ def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
         selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['Closer Review in Process']) #Next Action
         browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
-        step999(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-    
-    except NoSuchElementException:
+        CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+        return CFnum, closeMsg, closeFlag
+
+    except NoSuchElementException as e:
+        print(e)
         return CFnum, 'Page load error', False
 
     except Exception as e:
@@ -176,14 +186,13 @@ def step999(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
 
         sleep(3)
         closeMsg, closeFlag = checkClosure(browser.page_source)
-        print(CFnum, closeMsg, closeFlag)
+        
+        print('Inside 99 func', CFnum, closeMsg, closeFlag)
+        return CFnum, closeMsg, closeFlag
 
-        if closeFlag:
-            return CFnum, closeMsg, closeFlag
-        else:
-            return CFnum, closeMsg, closeFlag
     
-    except NoSuchElementException:
+    except NoSuchElementException as e:
+        print(e)
         return CFnum, 'Page load error', False    
     
     except Exception as e:
