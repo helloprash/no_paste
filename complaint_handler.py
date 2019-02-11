@@ -78,17 +78,19 @@ def getCFDetails(htmlSource):
     productType = 'No ptype'
     productFormula = 'No pformula'
     serialNum = 'No ser'
+    fieldServiceFlag = False
+    fieldServiceStatus = 'no FSE'
     IR = False
     IRstep = 'No IRStep'
     IRnum = 'No IRNum'
     try:
         soup = BS(htmlSource, "lxml")
-        #soup = BS(open(file_path), "lxml")
+        #soup = BS(open(htmlSource,encoding="utf8"), "lxml")
         center = soup.find_all('center')
         tables = soup.find_all('table',{'id':'TBCALogForm'})
 
+
         username = checkUsername(htmlSource)
-        print('username is: ',username)
 
         #Medical event
         td = [tr.find_all('td', {'id':'TDStandardText069'}) for tr in tables[0].find_all('tr')]
@@ -112,40 +114,67 @@ def getCFDetails(htmlSource):
         RDPC = data[0].text.strip()
 
 
-         #Product
-        p_tag = soup.find(text='Products').parent
-        font_tag = p_tag.parent
-        center_tag = font_tag.parent
-        next_center_tag = center_tag.findNext('center').findNext('center')
-        tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
-        td = [tr.find_all('td', {'id':'TDRowItem16'}) for tr in tables[0].find_all('tr')]
-        td1 = [tr.find_all('td', {'id':'TDRowItem14'}) for tr in tables[0].find_all('tr')]
-        td2 = [tr.find_all('td', {'id':'TDRowItem19'}) for tr in tables[0].find_all('tr')]
-        for eachtd, eachtd1, eachtd2 in zip(td,td1,td2):
-            if (eachtd, eachtd1, eachtd2):
-                data = [each.find('font') for each in eachtd]
-                data1 = [each.find('font') for each in eachtd1]
-                data2 = [each.find('font') for each in eachtd2]
-        productFormula = data[0].text.strip()
-        productType = data1[0].text.strip()
-        serialNum = data2[0].text.strip()
+        #Product
+        try:
+            p_tag = soup.find(text='Products').parent
+            font_tag = p_tag.parent
+            center_tag = font_tag.parent
+            next_center_tag = center_tag.findNext('center').findNext('center')
+            tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
+            td = [tr.find_all('td', {'id':'TDRowItem16'}) for tr in tables[0].find_all('tr')]
+            td1 = [tr.find_all('td', {'id':'TDRowItem14'}) for tr in tables[0].find_all('tr')]
+            td2 = [tr.find_all('td', {'id':'TDRowItem19'}) for tr in tables[0].find_all('tr')]
+            for eachtd, eachtd1, eachtd2 in zip(td,td1,td2):
+                if (eachtd, eachtd1, eachtd2):
+                    data = [each.find('font') for each in eachtd]
+                    data1 = [each.find('font') for each in eachtd1]
+                    data2 = [each.find('font') for each in eachtd2]
+            productFormula = data[0].text.strip()
+            productType = data1[0].text.strip()
+            serialNum = data2[0].text.strip()
+
+        except AttributeError:
+            productFormula = 'No pFormula'
+            productType = 'No pType'
+            serialNum = 'No ser'
 
         #pRE
-        pREflag = False
-        p_tag = soup.find(text='pREs').parent
-        font_tag = p_tag.parent
-        center_tag = font_tag.parent
-        next_center_tag = center_tag.findNext('center').findNext('center')
-        pREtables = next_center_tag.find('table',{'id':'TBGenericRecs0'})
-        pREtr = pREtables.find_all('tr')
+        try:
+            pREflag = False
+            p_tag = soup.find(text='pREs').parent
+            font_tag = p_tag.parent
+            center_tag = font_tag.parent
+            next_center_tag = center_tag.findNext('center').findNext('center')
+            pREtables = next_center_tag.find('table',{'id':'TBGenericRecs0'})
+            pREtr = pREtables.find_all('tr')
 
-        for i in range(1, len(pREtr)):
-            pREtd = [eachtd for eachtd in pREtr[i].find_all('td')]
-            data = [item.text.strip() for item in pREtd]
-            for j in range(3,13):
-                if data[j] == 'Yes':
-                    pREflag = True
+            for i in range(1, len(pREtr)):
+                pREtd = [eachtd for eachtd in pREtr[i].find_all('td')]
+                data = [item.text.strip() for item in pREtd]
+                for j in range(3,13):
+                    if data[j] == 'Yes':
+                        pREflag = True
+
+        except AttributeError:
+            pREflag = False
         
+        #Field Service
+        try:
+            ir_tag = soup.find(text='Field Service').parent
+            font_tag = ir_tag.parent
+            center_tag = font_tag.parent
+            next_center_tag = center_tag.findNext('center').findNext('center')
+            tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
+            td = [tr.find_all('td', {'id':'TDRowItem12'}) for tr in tables[0].find_all('tr')]
+            for eachtd in td:
+                if eachtd:
+                    data = [each.find('font') for each in eachtd]
+            fieldServiceStatus = data[0].text.strip()
+            fieldServiceFlag = True
+
+        except AttributeError:
+            fieldServiceFlag = False
+            fieldServiceStatus = 'No FSE'
 
         #Investigation report
         try:
@@ -168,10 +197,10 @@ def getCFDetails(htmlSource):
             IRstep = 'XX'
             IRnum = 'XXXX'
         
-        return(True,username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,IR,IRstep,IRnum)
+        return(True,username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
     except Exception as err:
         print(err)
-        return(False, username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,IR,IRstep,IRnum)
+        return(False, username,RDPC,medical_event,pREflag,step,productType,productFormula,serialNum,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
 
 
 def Login(url, site):
@@ -340,8 +369,8 @@ def complaintProcess(CFnum, url):
 
             browser = actionSubmit(browser,CFnum)
 
-            (flag, username,RDPC,medical_event,pREflag,current_step,productType,productFormula,serialNum,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
-            print(flag, username,RDPC,medical_event,pREflag,current_step,productType,productFormula,serialNum,IR,IRstep,IRnum)
+            (flag, username,RDPC,medical_event,pREflag,current_step,productType,productFormula,serialNum,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
+            print(flag, username,RDPC,medical_event,pREflag,current_step,productType,productFormula,serialNum,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
             break
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError):
@@ -365,17 +394,22 @@ def complaintProcess(CFnum, url):
                         '140':steps.step999
                     }
 
-    if not flag and (current_step == '020' or '030'):
+    if current_step == '020' or current_step == '030':
         browser.quit()
+        print('Here')
         return (True, CFnum,'Error! The current step is {}'.format(current_step), False, fileFlag)
+
+    elif not flag:
+        browser.quit()
+        return (True, CFnum,'This is not a valid complaint folder number', False, fileFlag)
 
     elif medical_event == 'Yes':
         browser.quit()
         return (True, CFnum,'Medical event is Yes. Cannot process', False, fileFlag)
 
-    elif not flag:
+    elif fieldServiceFlag and (fieldServiceStatus != 'Closed'):
         browser.quit()
-        return (True, CFnum,'This is not a valid complaint folder number', False, fileFlag)
+        return (True, CFnum,'Field Service still open', False, fileFlag)
 
     elif pREflag:
         browser.quit()
@@ -391,9 +425,9 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum, 'IR still open in step {}'.format(IRstep), False, fileFlag)
     elif len(username) == 0 or len(RDPC) == 0  or len(productFormula) == 0:
-        print('Complaint folder not processable. Kindly check RDPC or product records.')
+        print('Error! Kindly check RDPC or product records.')
         browser.quit()
-        return (True, CFnum, 'Complaint folder not processable. Kindly check RDPC or product records.', False, fileFlag)
+        return (True, CFnum, 'Error! Kindly check RDPC or product records.', False, fileFlag)
     else:
         try:
             if not IR and ((productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
