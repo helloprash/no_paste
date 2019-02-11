@@ -6,11 +6,11 @@ import selenium
 
 base = None
 
-os.environ['TCL_LIBRARY'] = r'C:\Users\PB6\AppData\Local\Programs\Python\Python37\tcl\tcl8.6'
-os.environ['TK_LIBRARY'] = r'C:\Users\PB6\AppData\Local\Programs\Python\Python37\tcl\tk8.6'
+os.environ['TCL_LIBRARY'] = r'D:\Users\PB6\AppData\Local\Programs\Python\Python37\tcl\tcl8.6'
+os.environ['TK_LIBRARY'] = r'D:\Users\PB6\AppData\Local\Programs\Python\Python37\tcl\tk8.6'
 
 
-syspath = r"C:\Users\PB6\AppData\Local\Programs\Python\Python37\DLLs"
+syspath = r"D:\Users\PB6\AppData\Local\Programs\Python\Python37\DLLs"
 
 includes      = []
 include_files = [syspath + '/tcl86t.dll', syspath + '/tk86t.dll', 'Jnj48.ico', 'chromedriver.exe', 'phantomjs.exe', 'killPhantom.bat']

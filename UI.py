@@ -30,7 +30,7 @@ class ComplaintHandlerUI(tk.Tk):
         self.queue = queue
         self.userNameQueue = userNameQueue
 
-        self.geometry("400x460")
+        self.geometry("420x460")
         self.resizable(width=False, height=False)
         self.title("CATSWeb Automation Tool")
 
@@ -133,11 +133,11 @@ class LoginPage(tk.Frame):
         self.internet.config(font = ('Helvetica','11'), foreground="black", background="#FFFFFF")
         
 
-        self.logo.place(x='200', y='50', anchor='center')
-        self.loginStatusMsg.place(x='200', y='170', anchor="center")
-        self.btn.place(x='47', y='325')
-        self.message.place(x='200', y='115', anchor="center")
-        self.authorName.place(x='87', y='442')
+        self.logo.place(x='210', y='50', anchor='center')
+        self.loginStatusMsg.place(x='210', y='170', anchor="center")
+        self.btn.place(x='57', y='325')
+        self.message.place(x='210', y='115', anchor="center")
+        self.authorName.place(x='97', y='442')
 
         '''
         
@@ -210,7 +210,7 @@ class PageOne(tk.Frame):
         self.tree.heading('#2', text='Complaint Status')
         self.tree.column('#0', stretch=tk.YES, width=33, anchor='w')
         self.tree.column('#1', stretch=tk.YES, width=100, anchor='w')
-        self.tree.column('#2', stretch=tk.YES, width=250, anchor='w')
+        self.tree.column('#2', stretch=tk.YES, width=270, anchor='w')
     
         self.treeview = self.tree
         self.treeview.bind("<ButtonRelease-1>",lambda event :self.tree_select_event(event))
@@ -230,16 +230,16 @@ class PageOne(tk.Frame):
         self.previewButton['font'] = helv36
 
         self.msg.place(x='5', y='7')
-        self.CF_number.place(x='35', y='45')
-        self.CFnum.place(x='157', y='45')
-        self.previewButton.place(x='300', y='42')
-        self.button1.place(x='200', y='105', anchor='center')
+        self.CF_number.place(x='45', y='45')
+        self.CFnum.place(x='167', y='45')
+        self.previewButton.place(x='310', y='42')
+        self.button1.place(x='210', y='105', anchor='center')
         self.tree.place(x='0', y='140')
-        self.delButton.place(x='4', y='385')
-        self.button2.place(x='315', y='385')
+        self.delButton.place(x='15', y='385')
+        self.button2.place(x='325', y='385')
         #self.internet.place(x='270', y='420')
-        self.authorName.place(x='87', y='442')
-        self.vsb.place(x='380', y='140', height=228)
+        self.authorName.place(x='97', y='442')
+        self.vsb.place(x='403', y='140', height=228)
 
         self.CFnum.focus()
 
@@ -317,14 +317,22 @@ class PageOne(tk.Frame):
         self.button1.config(state = 'disabled')
         self.CFnum.delete(0, "end")
         self.tree.delete(*self.tree.get_children())
-        batch_file = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
+        killPhantom = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
+        killChrome = '\\\\'.join(os.path.join(current_folder,"killChrome.bat").split('\\'))
 
-        my_file = Path(batch_file)
-        if not my_file.is_file():
+        killPhan = Path(killPhantom)
+        if not killPhan.is_file():
             messagebox.showinfo('Error!','killPhantom.bat file not found')
 
         else:
-            Popen(batch_file)
+            Popen(killPhantom)
+
+        killChro = Path(killChrome)
+        if not killChro.is_file():
+            messagebox.showinfo('Error!','killChrome.bat file not found')
+
+        else:
+            Popen(killChrome)
 
         self.controller.show_frame(LoginPage)
 
@@ -446,7 +454,11 @@ class ThreadedClient:
         if(self.internet_on()):
             self.login_page.internet.config(text='Internet Connected')
             self.page_one.internet.config(text='Internet Connected')
-            self.login_page.btn.config(command=lambda: self.clicked(clipboard.GetData()))
+            try:
+                self.login_page.btn.config(command=lambda: self.clicked(clipboard.GetData()))
+            except RuntimeError:
+                messagebox.showinfo('Error!', 'Clipboard empty')
+
             self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.main_url))
 
             '''
