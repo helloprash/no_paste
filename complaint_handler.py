@@ -289,9 +289,9 @@ def complaintProcess(CFnum, url):
     print('inside complaintProcess', url)
     pjs_file = '\\\\'.join(os.path.join(current_folder,"phantomjs.exe").split('\\'))
     statusMsg = '' 
-    statusFlag = False
-
+    statusFlag = Fals
     fileFlag = True
+    
     my_file = Path(pjs_file)
     if not my_file.is_file():
         fileFlag = False
