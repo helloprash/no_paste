@@ -317,14 +317,22 @@ class PageOne(tk.Frame):
         self.button1.config(state = 'disabled')
         self.CFnum.delete(0, "end")
         self.tree.delete(*self.tree.get_children())
-        batch_file = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
+        killPhantom = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
+        killChrome = '\\\\'.join(os.path.join(current_folder,"killChrome.bat").split('\\'))
 
-        my_file = Path(batch_file)
-        if not my_file.is_file():
+        killPhan = Path(killPhantom)
+        if not killPhan.is_file():
             messagebox.showinfo('Error!','killPhantom.bat file not found')
 
         else:
-            Popen(batch_file)
+            Popen(killPhantom)
+
+        killChro = Path(killChrome)
+        if not killChro.is_file():
+            messagebox.showinfo('Error!','killChrome.bat file not found')
+
+        else:
+            Popen(killChrome)
 
         self.controller.show_frame(LoginPage)
 
@@ -446,7 +454,11 @@ class ThreadedClient:
         if(self.internet_on()):
             self.login_page.internet.config(text='Internet Connected')
             self.page_one.internet.config(text='Internet Connected')
-            self.login_page.btn.config(command=lambda: self.clicked(clipboard.GetData()))
+            try:
+                self.login_page.btn.config(command=lambda: self.clicked(clipboard.GetData()))
+            except RuntimeError:
+                messagebox.showinfo('Error!', 'Clipboard empty')
+
             self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.main_url))
 
             '''
