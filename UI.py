@@ -30,7 +30,7 @@ class ComplaintHandlerUI(tk.Tk):
         self.queue = queue
         self.userNameQueue = userNameQueue
 
-        self.geometry("420x460")
+        self.geometry("468x460")
         self.resizable(width=False, height=False)
         self.title("CATSWeb Automation Tool")
 
@@ -210,7 +210,7 @@ class PageOne(tk.Frame):
         self.tree.heading('#2', text='Complaint Status')
         self.tree.column('#0', stretch=tk.YES, width=33, anchor='w')
         self.tree.column('#1', stretch=tk.YES, width=100, anchor='w')
-        self.tree.column('#2', stretch=tk.YES, width=270, anchor='w')
+        self.tree.column('#2', stretch=tk.YES, width=318, anchor='w')
     
         self.treeview = self.tree
         self.treeview.bind("<ButtonRelease-1>",lambda event :self.tree_select_event(event))
@@ -239,7 +239,7 @@ class PageOne(tk.Frame):
         self.button2.place(x='325', y='385')
         #self.internet.place(x='270', y='420')
         self.authorName.place(x='97', y='442')
-        self.vsb.place(x='403', y='140', height=228)
+        self.vsb.place(x='452', y='140', height=228)
 
         self.CFnum.focus()
 
@@ -347,6 +347,7 @@ class PageOne(tk.Frame):
             print(CFnum, self.treeview.item(CFnum)["tags"])
             if 'Ongoing' in self.treeview.item(CFnum)["tags"]:
                 messagebox.showinfo('Error!', 'Complaint folder already in process')
+                self.CFnum.delete(0, "end")
                 return
             elif any(tag in self.treeview.item(CFnum)["tags"] for tag in ['Error', 'Closed']):
                 self.treeview.item(CFnum, values=(self.CFnum.get(),'Processing... Please wait'), tags='Ongoing')
@@ -356,6 +357,7 @@ class PageOne(tk.Frame):
             print(CFnum, self.treeview.item(CFnum)["tags"])
 
         self.treeview.tag_configure('Ongoing', background='')
+        self.CFnum.delete(0, "end")
 
         ThreadedTask(CFnum, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
 
@@ -399,11 +401,11 @@ class PageOne(tk.Frame):
                 if statusFlag:
                     self.treeview.set(CFnum, 'Complaint Status', statusMsg)
                     self.treeview.item(CFnum, tags='Closed')
-                    self.treeview.tag_configure('Closed', background='green')
+                    self.treeview.tag_configure('Closed', background='#51FE1A')
                 else:
                     self.treeview.set(CFnum, 'Complaint Status', statusMsg)
                     self.treeview.item(CFnum, tags='Error')
-                    self.treeview.tag_configure('Error', background='red')
+                    self.treeview.tag_configure('Error', background = '#FE3D29')
                 # Check contents of message and do whatever is needed. As a
                 # simple test, print it in real life, you would
                 # suitably update the GUI's display in a richer fashion).
@@ -586,6 +588,7 @@ class ThreadedTask(threading.Thread):
 
     def run(self):
         sessionFlag, CF_number, statusMsg, statusFlag, fileFlag = complaint_handler.complaintProcess(self.CFnum, self.main_url)
+        print(statusMsg)
 
         if not fileFlag:
             messagebox.showinfo('Error!','phantomjs.exe file not found')

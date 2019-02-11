@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
+import urllib3
 from time import sleep
 
 def actionSubmit(browser,ID):
@@ -63,7 +64,7 @@ def checkClosure(htmlSource):
         return e, False
         
 
-def step90(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     try:
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
         try:
@@ -78,19 +79,40 @@ def step90(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula = 
         CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
         return CFnum, closeMsg, closeFlag
 
+    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+        print(e)
+        return CFnum, 'Read Timeout Error', False
+
     except NoSuchElementException as e:
         print(e)
         return CFnum, 'Page load error', False
+
     except Exception as e:
         return CFnum, e, False
 
-def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     try:
         #Step 140
+        print('Here')
+        productRefresh(browser, CFnum, productCWID)
         pRE(browser,CFnum)
-        print(CFnum, RDPC, productType, productFormula,serialNum, username,IR,IRnum)
+        actionSubmit(browser,CFnum)
+        soup = BS(browser.page_source, "lxml")
+        tables = soup.find_all('table',{'id':'TBCALogForm'})
+        td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        incident_date = data[0].text.strip()
+
+        print(incident_date)
+
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
-        
+
+        if incident_date == '12/31/2999': 
+            browser.find_element_by_xpath('//*[@id="CTRLStandardDate001"]').clear() #Incident date
+            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Reason Code
+            
         summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
         Product_Deficiency_Identified = 'No'
         Complaint_trend_similar = 'Yes'
@@ -168,6 +190,10 @@ def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
         CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
         return CFnum, closeMsg, closeFlag
 
+    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+        print(e)
+        return CFnum, 'Read Timeout Error', False
+
     except NoSuchElementException as e:
         print(e)
         return CFnum, 'Page load error', False
@@ -175,9 +201,8 @@ def step140(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
     except Exception as e:
         return CFnum, e, False
 
-def step999(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     try:
-        pRE(browser,CFnum)
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
         selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Close Complaint']) #Workflow Decision
         selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['']) #Next Action
@@ -190,6 +215,9 @@ def step999(browser,CFnum, RDPC = 'XXXX', productType = 'XXXX', productFormula =
         print('Inside 99 func', CFnum, closeMsg, closeFlag)
         return CFnum, closeMsg, closeFlag
 
+    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+        print(e)
+        return CFnum, 'Read Timeout Error', False
     
     except NoSuchElementException as e:
         print(e)
@@ -218,3 +246,18 @@ def pRE(browser,CFnum):
         browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('pRE')
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
         actionSubmit(browser,CFnum)
+
+def productRefresh(browser, CFnum, productCWID):
+    if productCWID:
+        actionSubmit(browser,productCWID)
+        browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
+        browser.find_element_by_xpath('//*[@id="CTRLRELOAD"]').click() #Refresh product manufacturer
+        browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('Updated Mfr')
+        browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+        actionSubmit(browser,CFnum)
+        
+
+        
+
+
+
