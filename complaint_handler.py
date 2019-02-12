@@ -178,7 +178,7 @@ def getCFDetails(htmlSource):
                 pREtd = [eachtd for eachtd in pREtr[i].find_all('td')]
                 data = [item.text.strip() for item in pREtd]
                 for j in range(3,13):
-                    if data[j] == 'Yes':
+                    if data[j].lower() == 'Yes'.lower():
                         pREflag = True
 
         except AttributeError:
@@ -315,13 +315,13 @@ def preview(CFnum, main_url):
     #chrome_options.add_argument("--window-size=1920x1080")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("disable-extensions")
-    browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
-    browser.implicitly_wait(3)
-    browser.set_page_load_timeout(100)
     #main_url = 'http://cwqa/CATSWebNET/main.aspx?WCI=Main&WCE=ViewDashboard&WCU=s%3dU3ABTU2E6N0KP5NMIJHLMQD87GJ7QCIG%7c*~r%3dComplaint%20Owner%20Home%20Page%7c*~q%3d1%7c*~g%3d0'
     
     while True:
         try:
+            browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
+            browser.implicitly_wait(3)
+            browser.set_page_load_timeout(100)
             browser.get(main_url)
 
             sessionFlag, returnMsg = checkSession(browser.page_source)
@@ -430,7 +430,7 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum,'Error! The current step is {}. Please move CF to step 40/50'.format(current_step), False, fileFlag)
 
-    elif medical_event == 'Yes':
+    elif medical_event.lower() == 'Yes'.lower():
         browser.quit()
         return (True, CFnum,'Medical event is Yes. Cannot process', False, fileFlag)
 
@@ -446,11 +446,11 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum,'Please select a malfunction code', False, fileFlag)
 
-    elif malfunction_code != 'Not a Reportable Malfunction':
+    elif malfunction_code.lower() != 'Not a Reportable Malfunction'.lower():
         browser.quit()
         return (True, CFnum,'Cannot close CF with a Malfunction code', False, fileFlag)
 
-    elif fieldServiceFlag and (fieldServiceStatus != 'Closed'):
+    elif fieldServiceFlag and (fieldServiceStatus.lower() != 'Closed'.lower()):
         browser.quit()
         return (True, CFnum,'Please close the Field Service Record', False, fileFlag)
 
