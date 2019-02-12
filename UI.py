@@ -96,8 +96,8 @@ class LoginPage(tk.Frame):
         
         self.message = Label(self, text="Please copy your CATSWeb logged in url:")
         self.message.config(font = ('Helvetica','12'), foreground="#638213", background="#FFFFFF")
-        self.authorName = Label(self, text=u'\u00a9'+" Designed & Developed by Prashanth Kumar & Andrew Jesiah")
-        self.authorName.config(font = ('Montserrat','8'),foreground="#112D25", background="#FFFFFF")
+        self.authorName = Label(self, text=u'\u00a9'+" Tata Consultancy Services Limited")
+        self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")
 
         '''
 
@@ -133,11 +133,11 @@ class LoginPage(tk.Frame):
         self.internet.config(font = ('Helvetica','11'), foreground="black", background="#FFFFFF")
         
 
-        self.logo.place(x='210', y='50', anchor='center')
-        self.loginStatusMsg.place(x='210', y='170', anchor="center")
-        self.btn.place(x='57', y='325')
-        self.message.place(x='210', y='115', anchor="center")
-        self.authorName.place(x='97', y='442')
+        self.logo.place(x='232', y='50', anchor='center')
+        self.loginStatusMsg.place(x='232', y='170', anchor="center")
+        self.btn.place(x='79', y='305')
+        self.message.place(x='232', y='115', anchor="center")
+        self.authorName.place(x='262', y='442')
 
         '''
         
@@ -184,11 +184,11 @@ class PageOne(tk.Frame):
         self.CFnum = Entry(self, validate="key", validatecommand=(self.register(self.validate), '%P'))
         self.CFnum.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.main_url))
 
-        self.msg = Label(self)
-        self.msg.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
+        self.logged_in_user = Label(self)
+        self.logged_in_user.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
         
-        self.authorName = Label(self, text=u'\u00a9'+" Designed & Developed by Prashanth Kumar & Andrew Jesiah")
-        self.authorName.config(font = ('Montserrat','8'),foreground="#112D25", background="#FFFFFF")        
+        self.authorName = Label(self, text=u'\u00a9'+" Tata Consultancy Services Limited")
+        self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")        
 
         helv36 = font.Font(family='Helvetica', size=9)
     
@@ -229,16 +229,16 @@ class PageOne(tk.Frame):
         self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
         self.previewButton['font'] = helv36
 
-        self.msg.place(x='5', y='7')
-        self.CF_number.place(x='45', y='45')
-        self.CFnum.place(x='167', y='45')
-        self.previewButton.place(x='310', y='42')
-        self.button1.place(x='210', y='105', anchor='center')
+        self.logged_in_user.place(x='5', y='7')
+        self.CF_number.place(x='67', y='45')
+        self.CFnum.place(x='189', y='45')
+        self.previewButton.place(x='332', y='42')
+        self.button1.place(x='232', y='105', anchor='center')
         self.tree.place(x='0', y='140')
         self.delButton.place(x='15', y='385')
-        self.button2.place(x='325', y='385')
+        self.button2.place(x='370', y='385')
         #self.internet.place(x='270', y='420')
-        self.authorName.place(x='97', y='442')
+        self.authorName.place(x='262', y='442')
         self.vsb.place(x='452', y='140', height=228)
 
         self.CFnum.focus()
@@ -380,7 +380,7 @@ class PageOne(tk.Frame):
         while self.userNameQueue.qsize( ):
             try:
                 self.userName = self.userNameQueue.get(0)
-                self.msg.config(text = 'Logged in as '+self.userName)
+                self.logged_in_user.config(text = 'Logged in as '+self.userName)
                 # Check contents of message and do whatever is needed. As a
                 # simple test, print it (in real life, you would
                 # suitably update the GUI's display in a richer fashion).
@@ -599,8 +599,6 @@ class ThreadedTask(threading.Thread):
             self.page_one.logout()
 
         else:
-            print(statusMsg)
-
             self.CFnumQueue.put(CF_number)
             self.infoQueue.put(statusMsg)
             self.flagQueue.put(statusFlag)

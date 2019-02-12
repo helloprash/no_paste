@@ -84,6 +84,7 @@ def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX
         return CFnum, 'Read Timeout Error', False
 
     except NoSuchElementException as e:
+        print('Page load ', browser.current_url)
         print(e)
         return CFnum, 'Page load error', False
 
@@ -93,10 +94,9 @@ def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX
 def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     try:
         #Step 140
-        print('Here')
+        print('Here 140')
         productRefresh(browser, CFnum, productCWID)
         pRE(browser,CFnum)
-        actionSubmit(browser,CFnum)
         soup = BS(browser.page_source, "lxml")
         tables = soup.find_all('table',{'id':'TBCALogForm'})
         td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
@@ -163,6 +163,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
     CONCLUSION:
     Refer to CATSWeb Investigation Request # {0}
     '''.format(IRnum)
+
             browser.find_element_by_xpath("//textarea[contains(@id,'CTRLStandardMemo001')]").send_keys(initial_report) #initial report
 
         else:
@@ -195,6 +196,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
         return CFnum, 'Read Timeout Error', False
 
     except NoSuchElementException as e:
+        print('Page load ', browser.current_url)
         print(e)
         return CFnum, 'Page load error', False
 
@@ -220,6 +222,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
         return CFnum, 'Read Timeout Error', False
     
     except NoSuchElementException as e:
+        print('Page load ', browser.current_url)
         print(e)
         return CFnum, 'Page load error', False    
     
@@ -249,6 +252,7 @@ def pRE(browser,CFnum):
 
 def productRefresh(browser, CFnum, productCWID):
     if productCWID:
+        print('Here productRefresh')
         actionSubmit(browser,productCWID)
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
         browser.find_element_by_xpath('//*[@id="CTRLRELOAD"]').click() #Refresh product manufacturer

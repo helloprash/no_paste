@@ -407,6 +407,7 @@ def complaintProcess(CFnum, url):
             #return (True, CFnum, 'Read Timeout Error', False)
 
         except NoSuchElementException as allError:
+            print('Page load ', browser.current_url)
             browser.quit()
             print(allError)
             return (True, CFnum, allError, False, fileFlag)
@@ -502,7 +503,7 @@ def complaintProcess(CFnum, url):
                 CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                 print(CFnum, statusMsg, statusFlag)
                 browser.quit()
-                return (True, CFnum, statusMsg, False, fileFlag)
+                return (True, CFnum, statusMsg, statusFlag, fileFlag)
         except KeyError:
             browser.quit()
             return (True, CFnum, 'Try again! This file type should be in step 050', False, fileFlag)
