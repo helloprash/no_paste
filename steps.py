@@ -97,6 +97,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
         print('Here 140')
         productRefresh(browser, CFnum, productCWID)
         pRE(browser,CFnum)
+
         soup = BS(browser.page_source, "lxml")
         tables = soup.find_all('table',{'id':'TBCALogForm'})
         td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
@@ -111,7 +112,9 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
 
         if incident_date == '12/31/2999': 
             browser.find_element_by_xpath('//*[@id="CTRLStandardDate001"]').clear() #Incident date
-            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Reason Code
+            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Incident date
+        else:
+            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Known']) #Incident date
             
         summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
         Product_Deficiency_Identified = 'No'
