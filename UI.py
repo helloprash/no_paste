@@ -267,12 +267,12 @@ class PageOne(tk.Frame):
             self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
             self.thread1.start()
 
-        elif len(CFnum) == 0:
-            messagebox.showinfo('Error!', 'Enter a complaint folder number')
-            return
-
         elif len(item_iid) != 1:
             messagebox.showinfo('Error!', 'Multiple CFs cannot be viewed')
+            return
+
+        elif len(CFnum) == 0:
+            messagebox.showinfo('Error!', 'Enter a complaint folder number')
             return
 
     def workerThread2(self,CFnum, main_url):
