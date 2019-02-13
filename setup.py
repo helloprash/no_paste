@@ -13,7 +13,7 @@ os.environ['TK_LIBRARY'] = r'D:\Users\PB6\AppData\Local\Programs\Python\Python37
 syspath = r"D:\Users\PB6\AppData\Local\Programs\Python\Python37\DLLs"
 
 includes      = []
-include_files = [syspath + '/tcl86t.dll', syspath + '/tk86t.dll', 'Jnj48.ico', 'chromedriver.exe', 'phantomjs.exe', 'killPhantom.bat']
+include_files = [syspath + '/tcl86t.dll', syspath + '/tk86t.dll', 'Jnj48.ico', 'chromedriver.exe', 'phantomjs.exe', 'killPhantom.bat', 'killChrome.bat']
 
 '''
 if sys.platform == 'win32':
