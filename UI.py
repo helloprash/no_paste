@@ -182,7 +182,7 @@ class PageOne(tk.Frame):
         self.CF_number.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
 
         self.CFnum = Entry(self, validate="key", validatecommand=(self.register(self.validate), '%P'))
-        self.CFnum.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.main_url))
+        self.CFnum.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.item_iid, self.main_url))
 
         self.logged_in_user = Label(self)
         self.logged_in_user.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
@@ -213,7 +213,7 @@ class PageOne(tk.Frame):
         self.tree.column('#2', stretch=tk.YES, width=318, anchor='w')
     
         self.treeview = self.tree
-        self.treeview.bind("<ButtonRelease-1>",lambda event :self.tree_select_event(event))
+        self.treeview.bind("<<TreeviewSelect>>",lambda event :self.tree_select_event(event))
 
         self.vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.vsb.set)
@@ -252,24 +252,27 @@ class PageOne(tk.Frame):
 
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
+        print(self.item_iid)
         if self.item_iid:
             self.treeSelection = self.item_iid[0]
-            print(self.treeSelection)
 
     def viewPreview(self, CFnum, item_iid, main_url):
         if CFnum:
             self.thread1 = threading.Thread(target=self.workerThread2, args=(CFnum, main_url))
             self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
             self.thread1.start()
-        elif len(item_iid) != 1:
-            messagebox.showinfo('Error!', 'Multiple CFs cannot be viewed')
-            return
+
         elif len(item_iid) == 1:
             self.thread1 = threading.Thread(target=self.workerThread2, args=(item_iid[0], main_url))
             self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
             self.thread1.start()
+
         elif len(CFnum) == 0:
             messagebox.showinfo('Error!', 'Enter a complaint folder number')
+            return
+
+        elif len(item_iid) != 1:
+            messagebox.showinfo('Error!', 'Multiple CFs cannot be viewed')
             return
 
     def workerThread2(self,CFnum, main_url):
@@ -292,7 +295,7 @@ class PageOne(tk.Frame):
         else:
             for treeSelection in item_iid:
                 if 'Ongoing' in self.treeview.item(treeSelection)["tags"]:
-                    messagebox.showinfo('Error!', 'Complaint folder already in process')
+                    messagebox.showinfo('Error!', 'Complaint folder in process. Cannot delete')
                     return
                 self.treeview.delete(treeSelection)
                 self.treeSelection = ''
@@ -341,6 +344,7 @@ class PageOne(tk.Frame):
 
 
     def submit(self, CFnum, item_iid, main_url):
+        self.running = 1
         if CFnum:
             if CFnum in self.treeview.get_children():
                 print(CFnum, self.treeview.item(CFnum)["tags"])
@@ -355,25 +359,28 @@ class PageOne(tk.Frame):
                 self.treeview.insert('', 'end', self.CFnum.get(), text=str( len(self.treeview.get_children())+1), values=(self.CFnum.get(),'Processing... Please wait'), tags='Ongoing')
                 print(CFnum, self.treeview.item(CFnum)["tags"])
 
+            self.treeview.tag_configure('Ongoing', background='')
+            self.treeview.yview_moveto(1)
+            self.CFnum.delete(0, "end")
+            ThreadedTask(CFnum, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
+
         elif len(item_iid) >= 1:
             for treeSelection in item_iid:
+                print(treeSelection, self.treeview.item(treeSelection)["tags"])
 
+                if 'Ongoing' in self.treeview.item(treeSelection)["tags"]:
+                    messagebox.showinfo('Error!', 'Complaint folder already in process')
 
+                elif any(tag in self.treeview.item(treeSelection)["tags"] for tag in ['Error', 'Closed']):
+                    self.treeview.item(treeSelection, values=(treeSelection,'Processing... Please wait'), tags='Ongoing')
+                    self.treeview.tag_configure('Ongoing', background='')
+                    self.treeview.yview_moveto(1)
+                    ThreadedTask(treeSelection, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
 
         elif len(CFnum) == 0:
             messagebox.showinfo('Error!', 'Enter a complaint folder number')
             return
 
-
-
-
-        self.running = 1
-        
-
-        self.treeview.tag_configure('Ongoing', background='')
-        self.treeview.yview_moveto(1)
-        self.CFnum.delete(0, "end")
-        ThreadedTask(CFnum, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
 
     def processQueueIncoming(self):
         """Handle all messages currently in the queue, if any."""
@@ -475,7 +482,7 @@ class ThreadedClient:
             except RuntimeError:
                 messagebox.showinfo('Error!', 'Clipboard empty')
 
-            self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.main_url))
+            self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
 
             '''
             if(self.catsWebconn() == 200):
@@ -602,7 +609,6 @@ class ThreadedTask(threading.Thread):
 
     def run(self):
         sessionFlag, CF_number, statusMsg, statusFlag, fileFlag = complaint_handler.complaintProcess(self.CFnum, self.main_url)
-        print(statusMsg)
 
         if not fileFlag:
             messagebox.showinfo('Error!','phantomjs.exe file not found')
