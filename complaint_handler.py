@@ -32,9 +32,11 @@ def checkSession(htmlSource):
             if eachtd:
                 data = eachtd[0].text.strip()
                 print(data)
+        print("sessionFalse")
         return False, data
 
     except:
+        print("sessionTrue")
         return True, 'None'
 
 def checkUsername(htmlSource):
@@ -285,16 +287,7 @@ def Login(url, site):
         except Exception as e:
             print(e)
             continue
-            #return (e,None, False)
-        '''
-        finally:
-            #Popen(batch_file)
-            print('10 sleep')
-            time.sleep(10)
-        '''
 
-    
-    #return (url, True)
 
 def preview(CFnum, main_url):
     print('Preview: ',preview)
@@ -385,8 +378,10 @@ def complaintProcess(CFnum, url):
 
             sessionFlag, returnMsg = checkSession(browser.page_source)
             if not sessionFlag:
-                if returnMsg == 'Your CATSWeb V7 session does not exist.  Please enter your login information:':
-                    return False, CFnum, 'session expired!', False, fileFlag
+                return False, CFnum, 'session expired!', False, fileFlag
+                #if returnMsg == 'Your CATSWeb V7 session does not exist.  Please enter your login information:' or returnMsg == 'Please enter your login information:':
+                    
+                    
            
             print(browser.current_url)
 
@@ -507,17 +502,3 @@ def complaintProcess(CFnum, url):
         except KeyError:
             browser.quit()
             return (True, CFnum, 'Try again! This file type should be in step 050', False, fileFlag)
-
-        
-
-
-
-
-
-    
-
-
-
-    
-
-
