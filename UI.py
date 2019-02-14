@@ -16,7 +16,7 @@ import urllib
 from urllib.request import urlopen
 from subprocess import Popen
 import socket
-from pywinauto import clipboard
+#from pywinauto import clipboard
 import complaint_handler
 import Images
 
@@ -91,6 +91,12 @@ class LoginPage(tk.Frame):
         self.logo = Label(self, image=img)
         self.logo.image = img
 
+        self.Link = Entry(self,style="BW.TEntry", font=large_font,foreground = 'grey')
+        self.Link.insert(0, 'Insert link here')
+        self.Link.bind('<FocusIn>', self.on_Userentry_click)
+        self.Link.bind('<FocusOut>', self.on_Userfocusout)
+        self.Link.bind('<Return>', lambda x: self.clicked(self.Link.get()))
+
         self.loginStatusMsg = Label(self, text='', font = ('Helvetica','10'), foreground="black", background="#FFFFFF")
 
         
@@ -123,16 +129,16 @@ class LoginPage(tk.Frame):
         
         
         helv36 = font.Font(family='Helvetica', size=11)
-        self.btn = tk.Button(self, text="Login", command=lambda: self.clicked(clipboard.GetData()))
+        self.btn = tk.Button(self, text="Login", command=lambda: self.clicked(self.Link.get()))
         self.btn.config(relief='flat', bg='#737370', fg="#FFFFFF", height=2, width=33)
-        self.btn.bind('<Return>', lambda x: self.clicked(clipboard.GetData()))
+        self.btn.bind('<Return>', lambda x: self.clicked(self.Link.get()))
         self.btn['font'] = helv36
 
 
         self.internet = Label(self, text="Checking...")
         self.internet.config(font = ('Helvetica','11'), foreground="black", background="#FFFFFF")
         
-
+        self.Link.place(x='80', y='200')
         self.logo.place(x='232', y='50', anchor='center')
         self.loginStatusMsg.place(x='232', y='170', anchor="center")
         self.btn.place(x='79', y='305')
@@ -149,6 +155,18 @@ class LoginPage(tk.Frame):
 
         #self.internet.place(x='270', y='400')
 
+    def on_Userentry_click(self, event):
+        """function that gets called whenever entry is clicked"""
+        if self.Link.get() == 'Insert link here':
+           self.Link.delete(0, "end") # delete all the text in the entry
+           self.Link.insert(0, '') #Insert blank for user input
+           self.Link.config(foreground = 'black')
+
+    def on_Userfocusout(self, event):
+        if self.Link.get() == '':
+            self.Link.insert(0, 'Insert link here')
+            self.Link.config(foreground = 'grey')
+
 
 
     
@@ -161,7 +179,7 @@ class PageOne(tk.Frame):
         self.main_url = ''
         self.treeSelection = ''
         self.userName = 'ABCDEFGHIJKL'
-        self.item_iid = tuple()
+        self.item_iid = []
         self.queue = controller.queue
         self.userNameQueue = controller.userNameQueue
         self.infoQueue = Queue.Queue()
@@ -253,16 +271,16 @@ class PageOne(tk.Frame):
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
         print(self.item_iid)
-        if self.item_iid:
-            self.treeSelection = self.item_iid[0]
-
+        
     def viewPreview(self, CFnum, item_iid, main_url):
+        print(item_iid)
         if CFnum:
             self.thread1 = threading.Thread(target=self.workerThread2, args=(CFnum, main_url))
             self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
             self.thread1.start()
 
         elif len(item_iid) == 1:
+            print(item_iid)
             self.thread1 = threading.Thread(target=self.workerThread2, args=(item_iid[0], main_url))
             self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
             self.thread1.start()
@@ -294,18 +312,21 @@ class PageOne(tk.Frame):
         if not self.item_iid:
             messagebox.showinfo('Error!', 'Please select a complaint folder')
         else:
-            for treeSelection in item_iid:
+            for treeSelection in self.item_iid:
                 if 'Ongoing' in self.treeview.item(treeSelection)["tags"]:
                     messagebox.showinfo('Error!', 'Complaint folder in process. Cannot delete')
                     return
                 self.treeview.delete(treeSelection)
+                self.item_iid = list(self.item_iid)
+                self.item_iid.remove(treeSelection)
+                self.item_iid = tuple(self.item_iid)
                 self.treeSelection = ''
+
 
                 items = self.treeview.get_children()
                 length = len(self.treeview.get_children())
 
                 for counter, item in enumerate(items):
-                    print(item)
                     self.treeview.item(item, text=str(counter+1))
 
 
@@ -320,7 +341,11 @@ class PageOne(tk.Frame):
     
 
     def logout(self):
+        self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
         self.login_page.btn.config(state = 'normal')
+        self.login_page.Link.delete(0, "end")
+        self.login_page.Link.insert(0, 'Insert link here')
+        self.login_page.Link.config(foreground = 'grey')
         self.button1.config(state = 'disabled')
         self.CFnum.delete(0, "end")
         self.tree.delete(*self.tree.get_children())
@@ -479,7 +504,7 @@ class ThreadedClient:
             self.login_page.internet.config(text='Internet Connected')
             self.page_one.internet.config(text='Internet Connected')
             try:
-                self.login_page.btn.config(command=lambda: self.clicked(clipboard.GetData()))
+                self.login_page.btn.config(command=lambda: self.clicked(self.login_page.Link.get()))
             except RuntimeError:
                 messagebox.showinfo('Error!', 'Clipboard empty')
 
