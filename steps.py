@@ -76,7 +76,7 @@ def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX
         browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
         pRE(browser,CFnum)
-        CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+        CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
         return CFnum, closeMsg, closeFlag
 
     except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
@@ -95,6 +95,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
     try:
         #Step 140
         print('Here 140')
+        print(productCWID)
         productRefresh(browser, CFnum, productCWID)
         pRE(browser,CFnum)
 
@@ -196,6 +197,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
 
     except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
         print(e)
+        print('Read Timeout ', browser.current_url)
         return CFnum, 'Read Timeout Error', False
 
     except NoSuchElementException as e:
@@ -230,7 +232,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
         return CFnum, 'Page load error', False    
     
     except Exception as e:
-        return CFnum, e, False
+        return CFnum, 'CatsWeb Error', False
     
 
 def pRE(browser,CFnum):
