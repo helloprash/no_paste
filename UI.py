@@ -102,7 +102,7 @@ class LoginPage(tk.Frame):
         
         self.message = Label(self, text="Please copy your CATSWeb logged in url:")
         self.message.config(font = ('Helvetica','12'), foreground="#638213", background="#FFFFFF")
-        self.authorName = Label(self, text=u'\u00a9'+" Tata Consultancy Services Limited")
+        self.authorName = Label(self, text='Copyright '+u'\u00a9'+" 2019 Tata Consultancy Services Limited")
         self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")
 
         '''
@@ -143,7 +143,7 @@ class LoginPage(tk.Frame):
         self.loginStatusMsg.place(x='232', y='170', anchor="center")
         self.btn.place(x='79', y='305')
         self.message.place(x='232', y='115', anchor="center")
-        self.authorName.place(x='262', y='442')
+        self.authorName.place(x='0', y='442')
 
         '''
         
@@ -205,7 +205,7 @@ class PageOne(tk.Frame):
         self.logged_in_user = Label(self)
         self.logged_in_user.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
         
-        self.authorName = Label(self, text=u'\u00a9'+" Tata Consultancy Services Limited")
+        self.authorName = Label(self, text='Copyright '+u'\u00a9'+" 2019 Tata Consultancy Services Limited")
         self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")        
 
         helv36 = font.Font(family='Helvetica', size=9)
@@ -256,7 +256,7 @@ class PageOne(tk.Frame):
         self.delButton.place(x='15', y='385')
         self.button2.place(x='370', y='385')
         #self.internet.place(x='270', y='420')
-        self.authorName.place(x='262', y='442')
+        self.authorName.place(x='0', y='442')
         self.vsb.place(x='452', y='140', height=228)
 
         self.CFnum.focus()
