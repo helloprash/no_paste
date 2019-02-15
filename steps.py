@@ -19,6 +19,21 @@ def selectMultiple(browser, xpath, selectList):
         select.select_by_value(eachItem)
     del select
 
+def currentStep(htmlSource):
+    soup = BS(htmlSource, "lxml")
+    #soup = BS(open(htmlSource,encoding="utf8"), "lxml")
+    center = soup.find_all('center')
+    tables = soup.find_all('table',{'id':'TBCALogForm'})
+
+    td = [tr.find_all('td', {'id':'TDStandardText003'}) for tr in tables[0].find_all('tr')]
+        
+    for eachtd in td:
+        if eachtd:
+            data = [each.find('font') for each in eachtd]
+    step = data[0].text.strip()
+
+    return step
+
 def getpRE(htmlSource):
     soup = BS(htmlSource, "lxml")
     table = soup.find_all('table', {'id':'TBGenericRecs0'})
@@ -65,174 +80,228 @@ def checkClosure(htmlSource):
         
 
 def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
-    try:
-        browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
+    url = browser.current_url
+    while True:    
         try:
-            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Required - Service Completed']) #Workflow Decision
-        except NoSuchElementException:
-            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Requests Completed'])
+            if browser.current_url != url:
+                browser.get(url)
+            actionSubmit(browser,CFnum)
+            print('Here 090')
+            step = currentStep(browser.page_source)
+            print(step)
+            if step == '090':
+                break
 
-        selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['']) #Next Action
-        browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
-        browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
-        pRE(browser,CFnum)
-        CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-        return CFnum, closeMsg, closeFlag
 
-    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
-        print(e)
-        return CFnum, 'Read Timeout Error', False
+            browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
+            try:
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Required - Service Completed']) #Workflow Decision
+            except NoSuchElementException:
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Requests Completed'])
 
-    except NoSuchElementException as e:
-        print('Page load ', browser.current_url)
-        print(e)
-        return CFnum, 'Page load error', False
+            selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['']) #Next Action
+            browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
+            browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
 
-    except Exception as e:
-        return CFnum, e, False
+            CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+            return CFnum, closeMsg, closeFlag
+
+        except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+            print(e)
+            print('Read Timeout step 50-90', browser.current_url)
+            continue
+            #return CFnum, 'Read Timeout Error', False
+
+        except NoSuchElementException as e:
+            print('Page load ', browser.current_url)
+            print(e)
+            continue
+            #return CFnum, 'Page load error', False
+
+        except Exception as e:
+            return CFnum, e, False
+
+    CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+    return CFnum, closeMsg, closeFlag
+
 
 def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
-    try:
-        #Step 140
-        print('Here 140')
-        print(productCWID)
-        productRefresh(browser, CFnum, productCWID)
-        pRE(browser,CFnum)
+    url = browser.current_url
+    while True:
+        try:
+            #Step 140
+            if browser.current_url != url:
+                browser.get(url)
+            actionSubmit(browser,CFnum)
+            print('Here 140')
+            step = currentStep(browser.page_source)
+            print(step)
+            if step == '140':
+                break
 
-        soup = BS(browser.page_source, "lxml")
-        tables = soup.find_all('table',{'id':'TBCALogForm'})
-        td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
-        for eachtd in td:
-            if eachtd:
-                data = [each.find('font') for each in eachtd]
-        incident_date = data[0].text.strip()
+            soup = BS(browser.page_source, "lxml")
+            tables = soup.find_all('table',{'id':'TBCALogForm'})
+            td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
+            for eachtd in td:
+                if eachtd:
+                    data = [each.find('font') for each in eachtd]
+            incident_date = data[0].text.strip()
 
-        print(incident_date)
+            print(incident_date)
 
-        browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
+            browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
 
-        if incident_date == '12/31/2999': 
-            browser.find_element_by_xpath('//*[@id="CTRLStandardDate001"]').clear() #Incident date
-            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Incident date
-        else:
-            selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Known']) #Incident date
+            if incident_date == '12/31/2999': 
+                browser.find_element_by_xpath('//*[@id="CTRLStandardDate001"]').clear() #Incident date
+                selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Incident date
+            else:
+                selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Known']) #Incident date
+                
+            summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
+            Product_Deficiency_Identified = 'No'
+            Complaint_trend_similar = 'Yes'
+            Internal_CAPA_requested = 'No'
+            Reason_for_no_CAPA = 'Product Deficiency not identified'
             
-        summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
-        Product_Deficiency_Identified = 'No'
-        Complaint_trend_similar = 'Yes'
-        Internal_CAPA_requested = 'No'
-        Reason_for_no_CAPA = 'Product Deficiency not identified'
-        
-        if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
-        or (not IR and (RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
-            if not IR:
-                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
-                selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+            if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
+            or (not IR and (RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
+                if not IR:
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                    selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+                else:
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+                    
+                Reason_for_no_CAPA = 'Other, describe in CAPA Comments'
+                no_CAPA_comments = 'Previously Investigated Complaint per LIB90002'
+                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").clear() #Other(Reason for no CAPA comments)
+                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").send_keys(no_CAPA_comments)
+
+                
+            elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productType == 'Patient Interface') and (serialNum[0] == '6'):
+                if not IR:
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                    selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+                else:
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+
+                Complaint_trend_similar = 'Other (explain in comments)'
+                complaint_trend_comments = 'Due to an increase in PI complaints, NR-0099700 was opened to address this issue.'
+                precedent_CAPA = 'NR-0099700'
+                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").clear() #Complaint trend comments
+                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").send_keys(complaint_trend_comments)
+                browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
+                browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
+
+            elif IR:
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+                initial_report = '''SUMMARY OF REPORTED EVENT:
+        It was reported that the there was a {}. No patient contact was reported.
+        '''.format(RDPC)
+
+                summary = '''EVENT DESCRIPTION:
+        Refer to ‘Summary of Reported Event’ within the Initial Report
+
+        INVESTIGATION RESULTS:
+        Refer to CATSWeb Investigation Request # {0}
+
+        CONCLUSION:
+        Refer to CATSWeb Investigation Request # {0}
+        '''.format(IRnum)
+
+                browser.find_element_by_xpath("//textarea[contains(@id,'CTRLStandardMemo001')]").send_keys(initial_report) #initial report
+
             else:
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
                 
-            Reason_for_no_CAPA = 'Other, describe in CAPA Comments'
-            no_CAPA_comments = 'Previously Investigated Complaint per LIB90002'
-            browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").clear() #Other(Reason for no CAPA comments)
-            browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").send_keys(no_CAPA_comments)
-
+            browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').clear() #Final/Summary Report
+            browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').send_keys(summary)
+            selectMultiple(browser,'//*[@id="CTRLStandardText002"]',[Product_Deficiency_Identified]) #Product Deficiency Identified?
+            selectMultiple(browser,'//*[@id="CTRLStandardText018"]', [Complaint_trend_similar]) #Complaint trend similar?
+            selectMultiple(browser,'//*[@id="CTRLStandardText054"]', [Internal_CAPA_requested]) #Internal CAPA requested
+            selectMultiple(browser,'//*[@id="CTRLStandardText058"]', [Reason_for_no_CAPA]) #Reason for no CAPA
             
-        elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productType == 'Patient Interface') and (serialNum[0] == '6'):
-            if not IR:
-                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
-                selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+            checkbox = browser.find_element_by_xpath('//*[@id="CTRLStandardYesNo020"]') #Complaint ready for closing
+            if checkbox.is_selected():
+                pass
             else:
-                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+                checkbox.click()
+                    
+            selectMultiple(browser,'//*[@id="CTRLStandardText049"]', [username])
+            browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').clear() #Reason for edit
+            browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('RTC')
+            selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['Closer Review in Process']) #Next Action
+            browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
+            browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+            CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+            return CFnum, closeMsg, closeFlag
 
-            Complaint_trend_similar = 'Other (explain in comments)'
-            complaint_trend_comments = 'Due to an increase in PI complaints, NR-0099700 was opened to address this issue.'
-            precedent_CAPA = 'NR-0099700'
-            browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").clear() #Complaint trend comments
-            browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").send_keys(complaint_trend_comments)
-            browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
-            browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
+        except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+            print(e)
+            print('Read Timeout 90-140', browser.current_url)
+            continue
+            #return CFnum, 'Read Timeout Error', False
 
-        elif IR:
-            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-            initial_report = '''SUMMARY OF REPORTED EVENT:
-    It was reported that the there was a {}. No patient contact was reported.
-    '''.format(RDPC)
+        except NoSuchElementException as e:
+            print('Page load ', browser.current_url)
+            print(e)
+            continue
+            #return CFnum, 'Page load error', False
 
-            summary = '''EVENT DESCRIPTION:
-    Refer to ‘Summary of Reported Event’ within the Initial Report
+        except Exception as e:
+            return CFnum, e, False
 
-    INVESTIGATION RESULTS:
-    Refer to CATSWeb Investigation Request # {0}
-
-    CONCLUSION:
-    Refer to CATSWeb Investigation Request # {0}
-    '''.format(IRnum)
-
-            browser.find_element_by_xpath("//textarea[contains(@id,'CTRLStandardMemo001')]").send_keys(initial_report) #initial report
-
-        else:
-            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-            
-        browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').clear() #Final/Summary Report
-        browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').send_keys(summary)
-        selectMultiple(browser,'//*[@id="CTRLStandardText002"]',[Product_Deficiency_Identified]) #Product Deficiency Identified?
-        selectMultiple(browser,'//*[@id="CTRLStandardText018"]', [Complaint_trend_similar]) #Complaint trend similar?
-        selectMultiple(browser,'//*[@id="CTRLStandardText054"]', [Internal_CAPA_requested]) #Internal CAPA requested
-        selectMultiple(browser,'//*[@id="CTRLStandardText058"]', [Reason_for_no_CAPA]) #Reason for no CAPA
-        
-        checkbox = browser.find_element_by_xpath('//*[@id="CTRLStandardYesNo020"]') #Complaint ready for closing
-        if checkbox.is_selected():
-            pass
-        else:
-            checkbox.click()
-                
-        selectMultiple(browser,'//*[@id="CTRLStandardText049"]', [username])
-        browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').clear() #Reason for edit
-        browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('RTC')
-        selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['Closer Review in Process']) #Next Action
-        browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
-        browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
-        CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-        return CFnum, closeMsg, closeFlag
-
-    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
-        print(e)
-        print('Read Timeout ', browser.current_url)
-        return CFnum, 'Read Timeout Error', False
-
-    except NoSuchElementException as e:
-        print('Page load ', browser.current_url)
-        print(e)
-        return CFnum, 'Page load error', False
-
-    except Exception as e:
-        return CFnum, e, False
+    CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+    return CFnum, closeMsg, closeFlag
 
 def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
-    try:
-        browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
-        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Close Complaint']) #Workflow Decision
-        selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['']) #Next Action
-        browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
-        browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+    url = browser.current_url
+    while True:    
+        try:
+            if browser.current_url != url:
+                browser.get(url)
+            actionSubmit(browser,CFnum)
+            print('Here 999')
+            step = currentStep(browser.page_source)
+            print(step)
+            if step == '999':
+                break
+                
+            print(productCWID)
+            productRefresh(browser, CFnum, productCWID)
+            pRE(browser,CFnum)
 
-        sleep(3)
-        closeMsg, closeFlag = checkClosure(browser.page_source)
+            browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
+            selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Close Complaint']) #Workflow Decision
+            selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['']) #Next Action
+            browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
+            browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+
+            sleep(3)
+            closeMsg, closeFlag = checkClosure(browser.page_source)
+            
+            print('Inside 999 func', CFnum, closeMsg, closeFlag)
+            return CFnum, closeMsg, closeFlag
+
+        except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
+            print(e)
+            print('Read Timeout 140-999', browser.current_url)
+            continue
+            #return CFnum, 'Read Timeout Error', False
         
-        print('Inside 99 func', CFnum, closeMsg, closeFlag)
-        return CFnum, closeMsg, closeFlag
+        except NoSuchElementException as e:
+            print('Page load ', browser.current_url)
+            print(e)
+            continue
+            #return CFnum, 'Page load error', False    
+        
+        except Exception as e:
+            return CFnum, 'CatsWeb Error', False
 
-    except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
-        print(e)
-        return CFnum, 'Read Timeout Error', False
+    sleep(3)
+    closeMsg, closeFlag = checkClosure(browser.page_source)
     
-    except NoSuchElementException as e:
-        print('Page load ', browser.current_url)
-        print(e)
-        return CFnum, 'Page load error', False    
-    
-    except Exception as e:
-        return CFnum, 'CatsWeb Error', False
+    print('Inside 999 func', CFnum, closeMsg, closeFlag)
+    return CFnum, closeMsg, closeFlag
     
 
 def pRE(browser,CFnum):
