@@ -58,7 +58,7 @@ class ComplaintHandlerUI(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background="#FFFFFF")
 
-        self.show_frame(LoginPage)
+        self.show_frame(PageOne)
 
     def show_frame(self, cont):
         frame = self.frames[cont]
@@ -260,6 +260,7 @@ class PageOne(tk.Frame):
         self.vsb.place(x='452', y='140', height=228)
 
         self.CFnum.focus()
+        self.CFnum.bind("<<Paste>>", self.handle_clipboard)
 
         '''
         self.signal = tk.Canvas(self,width=15, height=15)
@@ -267,6 +268,24 @@ class PageOne(tk.Frame):
         self.catsWebLabel = Label(self, text='CATSWeb',style='BW.TLabel')
         self.catsWebLabel.place(x='640', y='270')
         '''
+
+    def handle_clipboard(self, event):
+        self.CFnum.delete(0, "end")
+        print(self.controller.clipboard_get())
+        lines = self.controller.clipboard_get().split("\n")
+        print(lines)
+        print(len(lines))
+        if len(lines) == 1:
+            self.CFnum.insert('end', lines[0])
+
+        else:
+            for each_line in lines:
+                if len(each_line) == 0:
+                    continue
+
+                self.CFnum.insert('end', str(each_line))
+                self.CFnum.insert('end', ',')
+                print(self.CFnum.get())
 
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
@@ -335,7 +354,7 @@ class PageOne(tk.Frame):
 
 
     def validate(self, possible_new_value):
-        if re.match(r'^[0-9]*$', possible_new_value):
+        if re.match(r'^[0-9,]*$', possible_new_value):
             return True
         return False
     

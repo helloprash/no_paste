@@ -85,6 +85,7 @@ def getCFDetails(htmlSource):
     productCount = False
     fieldServiceFlag = False
     fieldServiceStatus = 'no FSE'
+    RDTFlag = False
     IR = False
     IRstep = 'No IRStep'
     IRnum = 'No IRNum'
@@ -185,6 +186,19 @@ def getCFDetails(htmlSource):
 
         except AttributeError:
             pREflag = False
+
+        #RDT Check
+
+        try:
+            p_tag = soup.find(text='---  Reportability Decision Trees  ---').parent
+            RDTFlag = True
+
+
+        except AttributeError:
+            RDTFlag = False
+
+        except Exception as e:
+            print(e)
         
         #Field Service
         try:
@@ -225,10 +239,10 @@ def getCFDetails(htmlSource):
             IRstep = 'XX'
             IRnum = 'XXXX'
         
-        return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
+        return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
     except Exception as err:
         print(err)
-        return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
+        return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
 
 
 def Login(url, site):
@@ -368,6 +382,7 @@ def complaintProcess(CFnum, url):
     '''
     
     
+    
     while True:
         try:
             browser = webdriver.PhantomJS(executable_path = pjs_file, desired_capabilities={'phantomjs.page.settings.resourceTimeout': '5000'})
@@ -391,8 +406,8 @@ def complaintProcess(CFnum, url):
 
             browser = actionSubmit(browser,CFnum)
 
-            (flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
-            print(flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,IR,IRstep,IRnum)
+            (flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
+            print(flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
             break
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError):
@@ -467,7 +482,11 @@ def complaintProcess(CFnum, url):
 
     elif len(productType) == 0 or productType.lower() == 'unknown':
         browser.quit()
-        return (True, CFnum, 'Error! Please select Product Type in product record', False, fileFlag)
+        return (True, CFnum, 'Error! Please select Product Type in product record', False, fileFlag)   
+
+    elif RDTFlag:
+        browser.quit()
+        return (True, CFnum, 'RDT present. Cannot close', False, fileFlag)
 
     else:
         try:
