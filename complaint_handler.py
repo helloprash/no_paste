@@ -190,7 +190,7 @@ def getCFDetails(htmlSource):
         #RDT Check
 
         try:
-            p_tag = soup.find(text='---  Reportability Decision Trees  ---').parent
+            RDT_tag = soup.find(text='---  Reportability Decision Trees  ---').parent
             RDTFlag = True
 
 
@@ -241,7 +241,7 @@ def getCFDetails(htmlSource):
         
         return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
     except Exception as err:
-        print(err)
+        print('Here error',err)
         return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
 
 
@@ -267,12 +267,14 @@ def Login(url, site):
             browser.set_page_load_timeout(100) 
             browser.get(url)
 
-            if site:
+            if site == 'CWPROD':
                 browser.get('http://cwprod/CATSWebNET/')
 
-            else:
+            elif site == 'CWQA':
                 browser.get('http://cwqa/CATSWebNET/')
 
+            elif site == 'CWDEV':
+                browser.get('https://cwdev.jnj.com/catswebnet/')
             
             sessionFlag, returnMsg = checkSession(browser.page_source)
 
@@ -385,6 +387,7 @@ def complaintProcess(CFnum, url):
     
     while True:
         try:
+            print('Not Here')
             browser = webdriver.PhantomJS(executable_path = pjs_file, desired_capabilities={'phantomjs.page.settings.resourceTimeout': '5000'})
             browser.implicitly_wait(3)
             browser.set_page_load_timeout(100)
@@ -420,7 +423,7 @@ def complaintProcess(CFnum, url):
             print('Page load ', browser.current_url)
             browser.quit()
             print(allError)
-            return (True, CFnum, allError, False, fileFlag)
+            return (True, CFnum, 'Page load error', False, fileFlag)
 
         except:
             continue

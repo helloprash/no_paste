@@ -58,7 +58,7 @@ class ComplaintHandlerUI(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background="#FFFFFF")
 
-        self.show_frame(PageOne)
+        self.show_frame(LoginPage)
 
     def show_frame(self, cont):
         frame = self.frames[cont]
@@ -214,7 +214,7 @@ class PageOne(tk.Frame):
         self.button1.config(relief='flat', bg='#737370', fg="#FFFFFF", height=2, width=38)
         self.button1['font'] = helv36
         self.button1.config(state = 'disabled')
-        self.button1.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.main_url))
+        self.button1.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.item_iid, self.main_url))
 
 
         self.button2 = tk.Button(self, text="Logout", command=lambda: self.logout())
@@ -271,12 +271,11 @@ class PageOne(tk.Frame):
 
     def handle_clipboard(self, event):
         self.CFnum.delete(0, "end")
-        print(self.controller.clipboard_get())
         lines = self.controller.clipboard_get().split("\n")
-        print(lines)
-        print(len(lines))
+        lines = [eachCF for eachCF in lines if len(eachCF) != 0]
+
         if len(lines) == 1:
-            self.CFnum.insert('end', lines[0])
+            self.CFnum['text'] = lines[-1]
 
         else:
             for each_line in lines:
@@ -285,7 +284,6 @@ class PageOne(tk.Frame):
 
                 self.CFnum.insert('end', str(each_line))
                 self.CFnum.insert('end', ',')
-                print(self.CFnum.get())
 
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
@@ -391,23 +389,26 @@ class PageOne(tk.Frame):
     def submit(self, CFnum, item_iid, main_url):
         self.running = 1
         if CFnum:
-            if CFnum in self.treeview.get_children():
-                print(CFnum, self.treeview.item(CFnum)["tags"])
-                if 'Ongoing' in self.treeview.item(CFnum)["tags"]:
-                    messagebox.showinfo('Error!', 'Complaint folder already in process')
-                    self.CFnum.delete(0, "end")
-                    return
-                elif any(tag in self.treeview.item(CFnum)["tags"] for tag in ['Error', 'Closed']):
-                    self.treeview.item(CFnum, values=(self.CFnum.get(),'Processing... Please wait'), tags='Ongoing')
+            CFlist = CFnum.split(',')
+            CFlist = [eachCF for eachCF in CFlist if len(eachCF) != 0]
+            for eachCF in CFlist:
+                if eachCF in self.treeview.get_children():
+                    print(eachCF, self.treeview.item(eachCF)["tags"])
+                    if 'Ongoing' in self.treeview.item(eachCF)["tags"]:
+                        messagebox.showinfo('Error!', 'Complaint folder already in process')
+                        self.eachCF.delete(0, "end")
+                        return
+                    elif any(tag in self.treeview.item(eachCF)["tags"] for tag in ['Error', 'Closed']):
+                        self.treeview.item(eachCF, values=(eachCF,'Processing... Please wait'), tags='Ongoing')
 
-            else:
-                self.treeview.insert('', 'end', self.CFnum.get(), text=str( len(self.treeview.get_children())+1), values=(self.CFnum.get(),'Processing... Please wait'), tags='Ongoing')
-                print(CFnum, self.treeview.item(CFnum)["tags"])
+                else:
+                    self.treeview.insert('', 'end', eachCF, text=str( len(self.treeview.get_children())+1), values=(eachCF,'Processing... Please wait'), tags='Ongoing')
+                    print(eachCF, self.treeview.item(eachCF)["tags"])
 
-            self.treeview.tag_configure('Ongoing', background='')
-            self.treeview.yview_moveto(1)
-            self.CFnum.delete(0, "end")
-            ThreadedTask(CFnum, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
+                self.treeview.tag_configure('Ongoing', background='')
+                self.treeview.yview_moveto(1)
+                self.CFnum.delete(0, "end")
+                ThreadedTask(eachCF, main_url, self.infoQueue,self.CFnumQueue, self.flagQueue, self.controller).start()
 
         elif len(item_iid) >= 1:
             for treeSelection in item_iid:
@@ -575,16 +576,19 @@ class ThreadedClient:
 
     def clicked(self, url):
         print('Url: ', url)
-        site = True
+        site = None
         if url == 'Insert link here' or len(url) == 0:
             messagebox.showinfo('Error!', 'Enter catsweb link')
             return
 
         elif 'http://cwprod/CATSWebNET/'.lower() in url.lower():
-            site = True
+            site = 'CWPROD'
 
         elif 'http://cwqa/CATSWebNET/'.lower() in url.lower():
-            site = False
+            site = 'CWQA'
+
+        elif 'https://cwdev.jnj.com/catswebnet/'.lower() in url.lower():
+            site = 'CWDEV'
 
         else:
             messagebox.showinfo('Error!', 'Invalid url')
