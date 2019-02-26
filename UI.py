@@ -209,6 +209,10 @@ class PageOne(tk.Frame):
         self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")        
 
         helv36 = font.Font(family='Helvetica', size=9)
+
+        self.previewButton = tk.Button(self, text="View", command=lambda: self.viewPreview(self.CFnum.get(), self.item_iid, self.main_url))
+        self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
+        self.previewButton['font'] = helv36
     
         self.button1 = tk.Button(self, text="Submit", command=lambda : self.submit(self.CFnum.get(), self.item_iid, self.main_url))
         self.button1.config(relief='flat', bg='#737370', fg="#FFFFFF", height=2, width=38)
@@ -216,6 +220,9 @@ class PageOne(tk.Frame):
         self.button1.config(state = 'disabled')
         self.button1.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.item_iid, self.main_url))
 
+        self.delButton = tk.Button(self, text="Delete", command=lambda: self.delete(self.item_iid))
+        self.delButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
+        self.delButton['font'] = helv36
 
         self.button2 = tk.Button(self, text="Logout", command=lambda: self.logout())
         self.button2.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=10)
@@ -238,14 +245,6 @@ class PageOne(tk.Frame):
 
         self.internet = Label(self, text="Checking...")
         self.internet.config(font = ('Helvetica','11'), foreground="black", background="#FFFFFF")
-
-        self.delButton = tk.Button(self, text="Delete", command=lambda: self.delete(self.item_iid))
-        self.delButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
-        self.delButton['font'] = helv36
-
-        self.previewButton = tk.Button(self, text="View", command=lambda: self.viewPreview(self.CFnum.get(), self.item_iid, self.main_url))
-        self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
-        self.previewButton['font'] = helv36
 
         self.logged_in_user.place(x='5', y='7')
         self.CF_number.place(x='67', y='45')
@@ -270,7 +269,7 @@ class PageOne(tk.Frame):
         '''
 
     def handle_clipboard(self, event):
-        self.CFnum.delete(0, "end")
+        #self.CFnum.delete(0, "end")
         lines = self.controller.clipboard_get().split("\n")
         lines = [eachCF for eachCF in lines if len(eachCF) != 0]
 
@@ -355,7 +354,6 @@ class PageOne(tk.Frame):
         if re.match(r'^[0-9,]*$', possible_new_value):
             return True
         return False
-    
 
     def logout(self):
         self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
@@ -523,12 +521,15 @@ class ThreadedClient:
         if(self.internet_on()):
             self.login_page.internet.config(text='Internet Connected')
             self.page_one.internet.config(text='Internet Connected')
-            try:
-                self.login_page.btn.config(command=lambda: self.clicked(self.login_page.Link.get()))
-            except RuntimeError:
-                messagebox.showinfo('Error!', 'Clipboard empty')
+
+            self.login_page.btn.config(command=lambda: self.clicked(self.login_page.Link.get()))
+            #self.login_page.btn.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
+            #self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
+
 
             self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
+            #self.page_one.button1.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
+            #self.page_one.CFnum.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
 
             '''
             if(self.catsWebconn() == 200):
@@ -541,8 +542,14 @@ class ThreadedClient:
         else:
             self.login_page.internet.config(text='Internet Not Connected')
             self.page_one.internet.config(text='Internet Not Connected')
+
             self.login_page.btn.config(command=lambda: self.messagebox())
+            #self.login_page.Link.bind('<Return>', lambda x:self.messagebox())
+
             self.page_one.button1.config(command=lambda: self.messagebox())
+            #self.page_one.button1.bind('<Return>', lambda x: self.messagebox())
+            #self.page_one.CFnum.bind('<Return>', lambda x: self.messagebox())
+
             #self.login_page.signal.config(bg='red')
         
 

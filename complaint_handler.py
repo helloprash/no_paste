@@ -286,10 +286,12 @@ def Login(url, site):
 
             userName = checkUsername(browser.page_source)
             
-            if site:
+            if site == 'CWPROD':
                 userName+=' (Prod)'
-            else:
+            elif site == 'CWQA':
                 userName+=' (QA)'
+            elif site == 'CWDEV':
+                userName+=' (Dev)'
             print(browser.current_url)
             return ('Please enter your login information:', userName, browser.current_url, True, fileFlag)
 
