@@ -95,7 +95,7 @@ class LoginPage(tk.Frame):
         self.Link.insert(0, 'Insert link here')
         self.Link.bind('<FocusIn>', self.on_Userentry_click)
         self.Link.bind('<FocusOut>', self.on_Userfocusout)
-        self.Link.bind('<Return>', lambda x: self.clicked(self.Link.get()))
+        self.LinkBind = self.Link.bind('<Return>', lambda x: self.clicked(self.Link.get()))
 
         self.loginStatusMsg = Label(self, text='', font = ('Helvetica','10'), foreground="black", background="#FFFFFF")
 
@@ -131,7 +131,7 @@ class LoginPage(tk.Frame):
         helv36 = font.Font(family='Helvetica', size=11)
         self.btn = tk.Button(self, text="Login", command=lambda: self.clicked(self.Link.get()))
         self.btn.config(relief='flat', bg='#737370', fg="#FFFFFF", height=2, width=33)
-        self.btn.bind('<Return>', lambda x: self.clicked(self.Link.get()))
+        self.btnBind = self.btn.bind('<Return>', lambda x: self.clicked(self.Link.get()))
         self.btn['font'] = helv36
 
 
@@ -187,6 +187,12 @@ class PageOne(tk.Frame):
         self.flagQueue = Queue.Queue()
         self.controller = controller
         self.clicked = clicked
+
+        self.CFnumBind = None
+        self.previewButtonBind = None
+        self.button1Bind = None
+        self.delButtonBind = None
+        self.button2Bind = None
         
         self.login_page = self.controller.get_page(LoginPage)
 
@@ -195,30 +201,28 @@ class PageOne(tk.Frame):
         style.configure("BW.TButton", font = ('Montserrat','10','bold'), foreground="#112D25", background="#DBDDDC")
         style.configure("BW.TEntry", background="gray90")
         style.configure("BW.TCheck", foreground="#112D25", background="#FFFFFF")
+
+        helv36 = font.Font(family='Helvetica', size=9)
         
         self.CF_number = Label(self, text="Complaint Folder:", style="BW.TLabel")
         self.CF_number.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
 
         self.CFnum = Entry(self, validate="key", validatecommand=(self.register(self.validate), '%P'))
-        self.CFnum.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.item_iid, self.main_url))
+
+        self.previewButton = tk.Button(self, text="View", command=lambda: self.viewPreview(self.CFnum.get(), self.item_iid, self.main_url))
+        self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
+        self.previewButton['font'] = helv36
 
         self.logged_in_user = Label(self)
         self.logged_in_user.config(font = ('Helvetica','10','bold'), foreground="#112D25", background="#FFFFFF")
         
         self.authorName = Label(self, text='Copyright '+u'\u00a9'+" 2019 Tata Consultancy Services Limited")
         self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")        
-
-        helv36 = font.Font(family='Helvetica', size=9)
-
-        self.previewButton = tk.Button(self, text="View", command=lambda: self.viewPreview(self.CFnum.get(), self.item_iid, self.main_url))
-        self.previewButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
-        self.previewButton['font'] = helv36
     
         self.button1 = tk.Button(self, text="Submit", command=lambda : self.submit(self.CFnum.get(), self.item_iid, self.main_url))
         self.button1.config(relief='flat', bg='#737370', fg="#FFFFFF", height=2, width=38)
         self.button1['font'] = helv36
         self.button1.config(state = 'disabled')
-        self.button1.bind('<Return>', lambda x: self.submit(self.CFnum.get(), self.item_iid, self.main_url))
 
         self.delButton = tk.Button(self, text="Delete", command=lambda: self.delete(self.item_iid))
         self.delButton.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=8)
@@ -227,7 +231,7 @@ class PageOne(tk.Frame):
         self.button2 = tk.Button(self, text="Logout", command=lambda: self.logout())
         self.button2.config(relief='flat', bg='#737370', fg="#FFFFFF", height=1, width=10)
         self.button2['font'] = helv36
-    
+        
         # Set the treeview
         self.tree = Treeview( self, columns=('CF number', 'Complaint Status'))
         self.tree.heading('#0', text='No', anchor='w')
@@ -289,6 +293,10 @@ class PageOne(tk.Frame):
         print(self.item_iid)
         
     def viewPreview(self, CFnum, item_iid, main_url):
+        if not self.internet_on():
+            messagebox.showinfo('Error!', 'Internet not connected')
+            return
+            
         print(item_iid)
         if CFnum:
             self.thread1 = threading.Thread(target=self.workerThread2, args=(CFnum, main_url))
@@ -356,7 +364,14 @@ class PageOne(tk.Frame):
         return False
 
     def logout(self):
-        self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
+        self.login_page.linkBind = self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
+
+        self.CFnum.unbind('<Return>', self.CFnumBind)
+        self.button1.unbind('<Return>', self.button1Bind)
+        self.previewButton.unbind('<Return>', self.previewButtonBind)
+        self.delButton.unbind('<Return>', self.delButtonBind)
+        self.button2.bind('<Return>', self.button2Bind)
+
         self.login_page.btn.config(state = 'normal')
         self.login_page.Link.delete(0, "end")
         self.login_page.Link.insert(0, 'Insert link here')
@@ -385,6 +400,10 @@ class PageOne(tk.Frame):
 
 
     def submit(self, CFnum, item_iid, main_url):
+        if not self.internet_on():
+            messagebox.showinfo('Error!', 'Internet not connected')
+            return
+
         self.running = 1
         if CFnum:
             CFlist = CFnum.split(',')
@@ -424,6 +443,17 @@ class PageOne(tk.Frame):
         elif len(CFnum) == 0:
             messagebox.showinfo('Error!', 'Enter a complaint folder number')
             return
+
+    def internet_on(self):
+        for timeout in [10,15]:
+            try:
+                socket.setdefaulttimeout(timeout)
+                host = socket.gethostbyname("www.google.com")
+                s = socket.create_connection((host, 80), 2)
+                s.close()
+                return True
+            except : pass
+        return False
 
 
     def processQueueIncoming(self):
@@ -517,40 +547,33 @@ class ThreadedClient:
         self.page_one.processUserNameQueueIncoming()
         
         #Check every 200 ms if there is an active internet connection
-        
+        '''
         if(self.internet_on()):
             self.login_page.internet.config(text='Internet Connected')
             self.page_one.internet.config(text='Internet Connected')
 
             self.login_page.btn.config(command=lambda: self.clicked(self.login_page.Link.get()))
-            #self.login_page.btn.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
-            #self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
-
 
             self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
-            #self.page_one.button1.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
-            #self.page_one.CFnum.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
-
-            '''
+            
+      
             if(self.catsWebconn() == 200):
                 self.login_page.signal.config(bg='green')
                 self.page_one.signal.config(bg='green')
             else:
                 self.login_page.signal.config(bg='red')
                 self.page_one.signal.config(bg='red')
-            '''
+         
         else:
             self.login_page.internet.config(text='Internet Not Connected')
             self.page_one.internet.config(text='Internet Not Connected')
 
             self.login_page.btn.config(command=lambda: self.messagebox())
-            #self.login_page.Link.bind('<Return>', lambda x:self.messagebox())
-
+            
             self.page_one.button1.config(command=lambda: self.messagebox())
-            #self.page_one.button1.bind('<Return>', lambda x: self.messagebox())
-            #self.page_one.CFnum.bind('<Return>', lambda x: self.messagebox())
-
+           
             #self.login_page.signal.config(bg='red')
+        '''
         
 
         if not self.running:
@@ -584,10 +607,15 @@ class ThreadedClient:
     def clicked(self, url):
         print('Url: ', url)
         site = None
-        if url == 'Insert link here' or len(url) == 0:
-            messagebox.showinfo('Error!', 'Enter catsweb link')
+
+        if not self.internet_on():
+            messagebox.showinfo('Error!', 'Internet not connected')
             return
 
+        elif url == 'Insert link here' or len(url) == 0:
+            messagebox.showinfo('Error!', 'Enter catsweb link')
+            return
+    
         elif 'http://cwprod/CATSWebNET/'.lower() in url.lower():
             site = 'CWPROD'
 
@@ -612,6 +640,8 @@ class ThreadedClient:
     def workerThread1(self, url, site):
         while self.running:
             self.login_page.btn.config(state = 'disabled')
+            self.login_page.Link.unbind('<Return>', self.login_page.LinkBind)
+
             loginMsg, userName, url, flag, fileFlag = complaint_handler.Login(url, site)
             print('Logged in', site, loginMsg, userName, url, flag, fileFlag )
 
@@ -621,13 +651,35 @@ class ThreadedClient:
                 self.login_page.userNameQueue.put(userName)
                 self.page_one.CFnum.focus()
                 self.page_one.button1.config(state = 'normal')
-                self.login_page.controller.show_frame(PageOne)
+                if self.internet_on():
+                    self.page_one.CFnumBind = self.page_one.CFnum.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
+                    self.page_one.button1Bind = self.page_one.button1.bind('<Return>', lambda x: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
+                    self.page_one.previewButtonBind = self.page_one.previewButton.bind('<Return>', lambda x: self.page_one.viewPreview(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
+                    self.page_one.delButtonBind = self.page_one.delButton.bind('<Return>', lambda x: self.page_one.delete(self.page_one.item_iid))
+                    self.page_one.button2Bind = self.page_one.button2.bind('<Return>', lambda x: self.page_one.logout())
+
+                    self.login_page.controller.show_frame(PageOne)
+                else:
+                    messagebox.showinfo('Error!','Internet not connected')
+                    self.login_page.LinkBind = self.login_page.Link.bind('<Return>', lambda x: self.login_page.clicked(self.login_page.Link.get()))
+                    self.login_page.Link.delete(0, "end")
+                    self.login_page.Link.insert(0, 'Insert link here')
+                    self.login_page.Link.config(foreground = 'grey')
+                    self.login_page.btn.config(state = 'normal')
+                    self.page_one.button1.config(state = 'disabled')
+                    self.login_page.controller.focus()
+
                 print("Logged in!")
                 print('---------------------------------------------')
 
             else:
                 if not fileFlag:
                     messagebox.showinfo('Error!','phantomjs.exe file not found')
+
+                self.login_page.LinkBind = self.login_page.Link.bind('<Return>', lambda x: self.login_page.clicked(self.login_page.Link.get()))
+
+                self.page_one.CFnum.unbind('<Return>', self.page_one.CFnumBind)
+                self.page_one.button1.unbind('<Return>', self.page_one.button1Bind)
 
                 self.login_page.message.config(text=loginMsg, font = ('Helvetica','11'), foreground="#E26C1B", background="#FFFFFF")
                 self.login_page.btn.config(state = 'normal')

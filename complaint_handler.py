@@ -202,10 +202,8 @@ def getCFDetails(htmlSource):
         
         #Field Service
         try:
-            ir_tag = soup.find(text='Field Service').parent
-            font_tag = ir_tag.parent
-            center_tag = font_tag.parent
-            next_center_tag = center_tag.findNext('center').findNext('center')
+            ir_tag = soup.find('font', face="Verdana", size="2", text='Field Service').parent
+            next_center_tag = ir_tag.findNext('center').findNext('center')
             tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
             td = [tr.find_all('td', {'id':'TDRowItem12'}) for tr in tables[0].find_all('tr')]
             for eachtd in td:
