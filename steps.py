@@ -151,7 +151,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
 
             browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
 
-            if incident_date == '12/31/2999': 
+            if len(incident_date) == 0 or incident_date == '12/31/2999': 
                 browser.find_element_by_xpath('//*[@id="CTRLStandardDate001"]').clear() #Incident date
                 selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Unknown, not provided']) #Incident date
             else:

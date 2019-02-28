@@ -78,6 +78,7 @@ class LoginPage(tk.Frame):
         self.flagQueue = Queue.Queue()
         self.controller = controller
         self.clicked = clicked
+        self.LinkBind = None
 
         style = Style()
         #style.configure("BW.TLabel", font = ('Helvetica','10'),foreground="#64B23B")
@@ -95,7 +96,6 @@ class LoginPage(tk.Frame):
         self.Link.insert(0, 'Insert link here')
         self.Link.bind('<FocusIn>', self.on_Userentry_click)
         self.Link.bind('<FocusOut>', self.on_Userfocusout)
-        self.LinkBind = self.Link.bind('<Return>', lambda x: self.clicked(self.Link.get()))
 
         self.loginStatusMsg = Label(self, text='', font = ('Helvetica','10'), foreground="black", background="#FFFFFF")
 
@@ -161,6 +161,7 @@ class LoginPage(tk.Frame):
            self.Link.delete(0, "end") # delete all the text in the entry
            self.Link.insert(0, '') #Insert blank for user input
            self.Link.config(foreground = 'black')
+           self.LinkBind = self.Link.bind('<Return>', lambda x: self.clicked(self.Link.get()))
 
     def on_Userfocusout(self, event):
         if self.Link.get() == '':
@@ -635,13 +636,13 @@ class ThreadedClient:
         self.thread1 = threading.Thread(target=self.workerThread1, args=(url, site))
         self.thread1.daemon = True #This line tells the thread to quit if the GUI (master thread) quits
         self.thread1.start()
+        self.login_page.Link.unbind('<Return>', self.login_page.LinkBind)
 
 
     def workerThread1(self, url, site):
         while self.running:
             self.login_page.btn.config(state = 'disabled')
-            self.login_page.Link.unbind('<Return>', self.login_page.LinkBind)
-
+            
             loginMsg, userName, url, flag, fileFlag = complaint_handler.Login(url, site)
             print('Logged in', site, loginMsg, userName, url, flag, fileFlag )
 
