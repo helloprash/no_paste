@@ -439,6 +439,10 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum,'This is not a valid complaint folder number', False, fileFlag)
 
+    elif current_step == '999':
+        browser.quit()
+        return (True, CFnum, 'Complaint folder already closed - step {}'.format(current_step), False, fileFlag)
+
     elif current_step == '020' or current_step == '030':
         browser.quit()
         return (True, CFnum,'Error! The current step is {}. Please move CF to step 40/50'.format(current_step), False, fileFlag)
@@ -470,10 +474,6 @@ def complaintProcess(CFnum, url):
     elif pREflag:
         browser.quit()
         return (True, CFnum,'pRE is YES. Cannot close', False, fileFlag)
-
-    elif current_step == '999':
-        browser.quit()
-        return (True, CFnum, 'Complaint folder already closed - step {}'.format(current_step), False, fileFlag)
 
     elif IR and IRstep != '999':
         browser.quit()
