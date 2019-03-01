@@ -276,18 +276,24 @@ class PageOne(tk.Frame):
     def handle_clipboard(self, event):
         #self.CFnum.delete(0, "end")
         lines = self.controller.clipboard_get().split("\n")
-        lines = [eachCF for eachCF in lines if len(eachCF) != 0]
+        lines = [eachCF+',' for eachCF in lines if len(eachCF) != 0]
 
         if len(lines) == 1:
             self.CFnum['text'] = lines[-1]
 
         else:
             for each_line in lines:
+                print(each_line)
                 if len(each_line) == 0:
                     continue
 
                 self.CFnum.insert('end', str(each_line))
-                self.CFnum.insert('end', ',')
+                #self.CFnum.insert('end', ',')
+
+    def validate(self, possible_new_value):
+        if re.match(r'^[0-9,]*$', possible_new_value):
+            return True
+        return False
 
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
@@ -359,11 +365,6 @@ class PageOne(tk.Frame):
                     #print(self.treeview.item(child)["values"])
 
 
-    def validate(self, possible_new_value):
-        if re.match(r'^[0-9,]*$', possible_new_value):
-            return True
-        return False
-
     def logout(self):
         self.login_page.linkBind = self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
 
@@ -414,8 +415,7 @@ class PageOne(tk.Frame):
                     print(eachCF, self.treeview.item(eachCF)["tags"])
                     if 'Ongoing' in self.treeview.item(eachCF)["tags"]:
                         messagebox.showinfo('Error!', 'Complaint folder already in process')
-                        self.eachCF.delete(0, "end")
-                        return
+            
                     elif any(tag in self.treeview.item(eachCF)["tags"] for tag in ['Error', 'Closed']):
                         self.treeview.item(eachCF, values=(eachCF,'Processing... Please wait'), tags='Ongoing')
 
