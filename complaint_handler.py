@@ -78,6 +78,7 @@ def getCFDetails(htmlSource):
     medical_event = 'No ME'
     pREflag = False
     step = 'No Step'
+    productLine = 'No pLine'
     productType = 'No ptype'
     productFormula = 'No pformula'
     serialNum = 'No ser'
@@ -128,6 +129,12 @@ def getCFDetails(htmlSource):
 
         malfunction_code = data[0].text.strip()
 
+        #Product Line
+        td = [tr.find_all('td', {'id':'TDStandardText011'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        productLine = data[0].text.strip()
 
         #Product
         try:
@@ -237,10 +244,10 @@ def getCFDetails(htmlSource):
             IRstep = 'XX'
             IRnum = 'XXXX'
         
-        return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+        return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
     except Exception as err:
         print('Here error',err)
-        return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+        return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
 
 
 def Login(url, site):
@@ -383,8 +390,6 @@ def complaintProcess(CFnum, url):
     browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
     '''
     
-    
-    
     while True:
         try:
             print('Not Here')
@@ -409,8 +414,8 @@ def complaintProcess(CFnum, url):
 
             browser = actionSubmit(browser,CFnum)
 
-            (flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
-            print(flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+            (flag,username,RDPC,malfunction_code,medical_event,pREflag,current_step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
+            print(flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
             break
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError):
@@ -493,12 +498,21 @@ def complaintProcess(CFnum, url):
 
     else:
         try:
-            if not IR and ((productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
+            if not IR and productLine == 'IOL':
+                if current_step == '140':
+                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                else:
+                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                    
+                browser.quit()
+                return (True, CFnum, statusMsg, statusFlag, fileFlag) 
+
+            elif not IR and ((productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
                 if (serialNum[0] == '6'):
                     if current_step == '140':
-                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                     else:
-                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                     
                     browser.quit()
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)
@@ -510,31 +524,20 @@ def complaintProcess(CFnum, url):
             or ((RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
                 print('Inside else part')
                 if current_step == '140':
-                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                 else:
-                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                     
                 browser.quit()
                 return (True, CFnum, statusMsg, statusFlag, fileFlag) 
             else:
-                CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
                 print(CFnum, statusMsg, statusFlag)
                 browser.quit()
                 return (True, CFnum, statusMsg, statusFlag, fileFlag)
+
         except KeyError:
             browser.quit()
             return (True, CFnum, 'This file cannot be closed as Investigation Not Required', False, fileFlag)
 
         
-
-
-
-
-
-    
-
-
-
-    
-
-

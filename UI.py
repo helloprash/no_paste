@@ -58,7 +58,7 @@ class ComplaintHandlerUI(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background="#FFFFFF")
 
-        self.show_frame(LoginPage)
+        self.show_frame(PageOne)
 
     def show_frame(self, cont):
         frame = self.frames[cont]
@@ -279,7 +279,16 @@ class PageOne(tk.Frame):
         lines = [eachCF+',' for eachCF in lines if len(eachCF) != 0]
 
         if len(lines) == 1:
-            self.CFnum['text'] = lines[-1]
+            try:
+                self.CFnum['text'] += lines[-1].strip().text()
+            except AttributeError:
+                pass
+            '''
+            if len(self.CFnum.get()) == 0:
+                self.CFnum['text'] = lines[-1]
+            else:
+                self.CFnum.insert('end', lines[-1])
+            '''
 
         else:
             for each_line in lines:

@@ -77,9 +77,42 @@ def checkClosure(htmlSource):
 
     except Exception as e:
         return e, False
+
+def checkValidation(htmlSource):
+    try:
+        soup = BS(htmlSource, "lxml")
+        #soup = BS(open(htmlSource,encoding="utf8"), "lxml")
+
+        #Username
+        tables = soup.find_all('table',{'id':'TBFancyMsgTypeCommon'})
+        
+        if len(tables) == 0:
+            return True, None
+
+        tableRow = [tr for tr in tables[0].find_all('tr')]
+        
+        tableData1 = [td for td in tableRow[0].find_all('td')]
+        tableData2 = [td for td in tableRow[1].find_all('td')]
+
+        returnMsg = None
+        if tableData1[0].text.strip() == 'Validation Error':
+            if 'When the complaint folder has one or more open items,'.lower() in tableData2[0].text.strip().lower():
+                returnMsg = 'Please close the open items'
+            elif 'You are not authorized to close this complaint at this time'.lower() in tableData2[0].text.strip().lower():
+                returnMsg = 'You are not authorized to close this complaint'
+            else:
+                returnMsg = tableData2[0].text.strip()
+        else:
+            return True, None
+        
+        return False, returnMsg
+        
+        
+    except Exception as e:
+        print(e)
         
 
-def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step90(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:    
         try:
@@ -125,7 +158,7 @@ def step90(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX
     return CFnum, closeMsg, closeFlag
 
 
-def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:
         try:
@@ -162,8 +195,12 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
             Complaint_trend_similar = 'Yes'
             Internal_CAPA_requested = 'No'
             Reason_for_no_CAPA = 'Product Deficiency not identified'
+
+            if not IR and productLine == 'IOL':
+                selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
             
-            if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
+            elif (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
             or (not IR and (RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
                 if not IR:
                     selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
@@ -194,8 +231,8 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
 
             elif IR:
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-                initial_report = '''SUMMARY OF REPORTED EVENT:
-        It was reported that the there was a {}. No patient contact was reported.
+                initial_report = '''\nSUMMARY OF REPORTED EVENT:
+        It was reported that there was a {}. No patient contact was reported.
         '''.format(RDPC)
 
                 summary = '''EVENT DESCRIPTION:
@@ -253,7 +290,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
     CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
     return CFnum, closeMsg, closeFlag
 
-def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:    
         try:
@@ -277,8 +314,9 @@ def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
             browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
 
             sleep(3)
-            closeMsg, closeFlag = checkClosure(browser.page_source)
-            
+            #closeMsg, closeFlag = checkClosure(browser.page_source)
+            closeFlag, closeMsg = checkValidation(browser.page_source)
+
             print('Inside 999 func', CFnum, closeMsg, closeFlag)
             return CFnum, closeMsg, closeFlag
 
@@ -298,7 +336,9 @@ def step999(browser,CFnum, RDPC = 'XXXX', productCWID='XXXX', productType = 'XXX
             return CFnum, 'CatsWeb Error', False
 
     sleep(3)
-    closeMsg, closeFlag = checkClosure(browser.page_source)
+    #closeMsg, closeFlag = checkClosure(browser.page_source)
+    
+    closeFlag, closeMsg = checkValidation(browser.page_source)
     
     print('Inside 999 func', CFnum, closeMsg, closeFlag)
     return CFnum, closeMsg, closeFlag
@@ -334,8 +374,3 @@ def productRefresh(browser, CFnum, productCWID):
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
         actionSubmit(browser,CFnum)
         
-
-        
-
-
-
