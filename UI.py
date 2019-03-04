@@ -398,14 +398,16 @@ class PageOne(tk.Frame):
             messagebox.showinfo('Error!','killPhantom.bat file not found')
 
         else:
-            Popen(killPhantom)
+            #Popen(killPhantom)
+            subprocess.call("cscript phantom.vbs") 
 
         killChro = Path(killChrome)
         if not killChro.is_file():
             messagebox.showinfo('Error!','killChrome.bat file not found')
 
         else:
-            Popen(killChrome)
+            #Popen(killChrome)
+            subprocess.call("cscript chrome.vbs") 
 
         self.controller.show_frame(LoginPage)
 
