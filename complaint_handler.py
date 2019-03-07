@@ -65,7 +65,6 @@ def checkUsername(htmlSource):
         return 'Error'
 
 
-
 def actionSubmit(browser,ID):
     browser.find_element_by_id('CTRLRECORDTYPE2').click() #Action Radio
     browser.find_element_by_xpath('//*[@id="CTRLRECORDIDTO"]').send_keys(ID) #CWID 
@@ -403,10 +402,7 @@ def complaintProcess(CFnum, url):
             sessionFlag, returnMsg = checkSession(browser.page_source)
             if not sessionFlag:
                 return False, CFnum, 'session expired!', False, fileFlag
-                #if returnMsg == 'Your CATSWeb V7 session does not exist.  Please enter your login information:' or returnMsg == 'Please enter your login information:':
                     
-                    
-           
             print(browser.current_url)
 
             CM = checkCM(browser.page_source)
@@ -459,7 +455,7 @@ def complaintProcess(CFnum, url):
 
     elif not productCount:
         browser.quit()
-        return (True, CFnum,'More than two product records. Cannot close', False, fileFlag)
+        return (True, CFnum,'More than two or no product records. Cannot close', False, fileFlag)
 
     elif len(RDPC) == 0:
         browser.quit()

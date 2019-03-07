@@ -87,8 +87,11 @@ def checkValidation(htmlSource):
         tables = soup.find_all('table',{'id':'TBFancyMsgTypeCommon'})
         
         if len(tables) == 0:
-            return True, None
+            print('No Fancy')
+            if currentStep(htmlSource) == '999':
+                return True, 'Closed'
 
+        print('Found table')
         tableRow = [tr for tr in tables[0].find_all('tr')]
         
         tableData1 = [td for td in tableRow[0].find_all('td')]
@@ -163,10 +166,10 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
     while True:
         try:
             #Step 140
+            print('Here 140')
             if browser.current_url != url:
                 browser.get(url)
             actionSubmit(browser,CFnum)
-            print('Here 140')
             step = currentStep(browser.page_source)
             print(step)
             if step == '140':

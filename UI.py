@@ -1,4 +1,4 @@
-import base64
+from base64 import b64decode
 from pathlib import Path
 import os, inspect 
 import re
@@ -12,11 +12,10 @@ from tkinter import font
 import queue as Queue
 import threading
 from selenium import webdriver
-import urllib
 from urllib.request import urlopen
+import subprocess
 from subprocess import Popen
 import socket
-#from pywinauto import clipboard
 import complaint_handler
 import Images
 
@@ -34,7 +33,7 @@ class ComplaintHandlerUI(tk.Tk):
         self.resizable(width=False, height=False)
         self.title("CATSWeb Automation Tool")
 
-        icondata= base64.b64decode(Images.Jnj32icon)
+        icondata= b64decode(Images.Jnj32icon)
         tempFile= "icon.ico"
         iconfile= open(tempFile,"wb")
         iconfile.write(icondata)
@@ -58,7 +57,7 @@ class ComplaintHandlerUI(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
             frame.configure(background="#FFFFFF")
 
-        self.show_frame(PageOne)
+        self.show_frame(LoginPage)
 
     def show_frame(self, cont):
         frame = self.frames[cont]
@@ -81,11 +80,8 @@ class LoginPage(tk.Frame):
         self.LinkBind = None
 
         style = Style()
-        #style.configure("BW.TLabel", font = ('Helvetica','10'),foreground="#64B23B")
-        #style.configure("BW.TButton", font = ('Helvetica','10'), foreground="#64B23B", background="#FFFFFF")
         style.configure("BW.TEntry", background = "gray90")
 
-        #imgFile = '\\\\'.join(os.path.join(current_folder,"jnj.gif").split('\\'))
         large_font = ('Verdana',17)
 
         img = tk.PhotoImage(data=Images.jnjGIF)      
@@ -99,34 +95,10 @@ class LoginPage(tk.Frame):
 
         self.loginStatusMsg = Label(self, text='', font = ('Helvetica','10'), foreground="black", background="#FFFFFF")
 
-        
-        self.message = Label(self, text="Please copy your CATSWeb logged in url:")
+        self.message = Label(self, text="Please insert your CATSWeb logged in url:")
         self.message.config(font = ('Helvetica','12'), foreground="#638213", background="#FFFFFF")
         self.authorName = Label(self, text='Copyright '+u'\u00a9'+" 2019 Tata Consultancy Services Limited")
-        self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")
-
-        '''
-
-        self.UserEntry = Entry(self,style="BW.TEntry", font=large_font,foreground = 'grey')
-        self.UserEntry.insert(0, 'Employee ID')
-        self.UserEntry.bind('<FocusIn>', self.on_Userentry_click)
-        self.UserEntry.bind('<FocusOut>', self.on_Userfocusout)
-        self.UserEntry.bind('<Return>', lambda x: self.clicked(self.UserEntry.get(), self.PassEntry.get()))
-
-        self.PassEntry = Entry(self,style="BW.TEntry", font=large_font, foreground = 'grey')
-        self.PassEntry.insert(0, 'Password')
-        self.PassEntry.bind('<FocusIn>', self.on_Passentry_click)
-        self.PassEntry.bind('<FocusOut>', self.on_Passfocusout)
-        self.PassEntry.bind('<Return>', lambda x: self.clicked(self.UserEntry.get(), self.PassEntry.get()))
-        '''
-
-        '''
-        self.signal = tk.Canvas(self,width=15, height=15)
-        self.signal.place(x='470', y='220')
-        self.catsWebLabel = Label(self, text='CATSWeb',style='BW.TLabel')
-        self.catsWebLabel.place(x='390', y='220')
-        '''
-        
+        self.authorName.config(font = ('Montserrat','9'),foreground="#112D25", background="#FFFFFF")        
         
         helv36 = font.Font(family='Helvetica', size=11)
         self.btn = tk.Button(self, text="Login", command=lambda: self.clicked(self.Link.get()))
@@ -144,15 +116,6 @@ class LoginPage(tk.Frame):
         self.btn.place(x='79', y='305')
         self.message.place(x='232', y='115', anchor="center")
         self.authorName.place(x='0', y='442')
-
-        '''
-        
-        self.UserEntry.place(x='47', y='200')
-        self.PassEntry.place(x='47', y='260')
-        
-        
-        '''
-
         #self.internet.place(x='270', y='400')
 
     def on_Userentry_click(self, event):
@@ -167,7 +130,6 @@ class LoginPage(tk.Frame):
         if self.Link.get() == '':
             self.Link.insert(0, 'Insert link here')
             self.Link.config(foreground = 'grey')
-
 
 
     
@@ -248,9 +210,6 @@ class PageOne(tk.Frame):
         self.vsb = tk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.vsb.set)
 
-        self.internet = Label(self, text="Checking...")
-        self.internet.config(font = ('Helvetica','11'), foreground="black", background="#FFFFFF")
-
         self.logged_in_user.place(x='5', y='7')
         self.CF_number.place(x='67', y='45')
         self.CFnum.place(x='189', y='45')
@@ -259,19 +218,11 @@ class PageOne(tk.Frame):
         self.tree.place(x='0', y='140')
         self.delButton.place(x='15', y='385')
         self.button2.place(x='370', y='385')
-        #self.internet.place(x='270', y='420')
         self.authorName.place(x='0', y='442')
         self.vsb.place(x='452', y='140', height=228)
 
         self.CFnum.focus()
         self.CFnum.bind("<<Paste>>", self.handle_clipboard)
-
-        '''
-        self.signal = tk.Canvas(self,width=15, height=15)
-        self.signal.place(x='720', y='270')
-        self.catsWebLabel = Label(self, text='CATSWeb',style='BW.TLabel')
-        self.catsWebLabel.place(x='640', y='270')
-        '''
 
     def handle_clipboard(self, event):
         #self.CFnum.delete(0, "end")
@@ -283,12 +234,6 @@ class PageOne(tk.Frame):
                 self.CFnum['text'] += lines[-1].strip().text()
             except AttributeError:
                 pass
-            '''
-            if len(self.CFnum.get()) == 0:
-                self.CFnum['text'] = lines[-1]
-            else:
-                self.CFnum.insert('end', lines[-1])
-            '''
 
         else:
             for each_line in lines:
@@ -297,7 +242,6 @@ class PageOne(tk.Frame):
                     continue
 
                 self.CFnum.insert('end', str(each_line))
-                #self.CFnum.insert('end', ',')
 
     def validate(self, possible_new_value):
         if re.match(r'^[0-9,]*$', possible_new_value):
@@ -333,7 +277,6 @@ class PageOne(tk.Frame):
                 messagebox.showinfo('Error!', 'Enter a complaint folder number')
             return
 
-
     def workerThread2(self,CFnum, main_url):
         sessionFlag, previewFlag, previewMsg, fileFlag = complaint_handler.preview(CFnum, main_url)
 
@@ -346,7 +289,6 @@ class PageOne(tk.Frame):
 
         elif not previewFlag:
             messagebox.showinfo('Error!', previewMsg)
-
 
     def delete(self, item_iid):
         if not self.item_iid:
@@ -369,11 +311,6 @@ class PageOne(tk.Frame):
                 for counter, item in enumerate(items):
                     self.treeview.item(item, text=str(counter+1))
 
-
-                #for child in self.treeview.get_children():
-                    #print(self.treeview.item(child)["values"])
-
-
     def logout(self):
         self.login_page.linkBind = self.login_page.Link.bind('<Return>', lambda x: self.clicked(self.login_page.Link.get()))
 
@@ -390,6 +327,10 @@ class PageOne(tk.Frame):
         self.button1.config(state = 'disabled')
         self.CFnum.delete(0, "end")
         self.tree.delete(*self.tree.get_children())
+
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
         killPhantom = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
         killChrome = '\\\\'.join(os.path.join(current_folder,"killChrome.bat").split('\\'))
 
@@ -398,16 +339,16 @@ class PageOne(tk.Frame):
             messagebox.showinfo('Error!','killPhantom.bat file not found')
 
         else:
-            #Popen(killPhantom)
-            subprocess.call("cscript phantom.vbs") 
+            #subprocess.call("cscript phantom.vbs", startupinfo=si) 
+            subprocess.call("killPhantom.bat", startupinfo=si) 
 
         killChro = Path(killChrome)
         if not killChro.is_file():
             messagebox.showinfo('Error!','killChrome.bat file not found')
 
         else:
-            #Popen(killChrome)
-            subprocess.call("cscript chrome.vbs") 
+            #subprocess.call("cscript chrome.vbs", startupinfo=si) 
+            subprocess.call("killChrome.bat", startupinfo=si) 
 
         self.controller.show_frame(LoginPage)
 
@@ -557,36 +498,6 @@ class ThreadedClient:
         self.page_one.processQueueIncoming()
         self.page_one.processinfoQueueIncoming()
         self.page_one.processUserNameQueueIncoming()
-        
-        #Check every 200 ms if there is an active internet connection
-        '''
-        if(self.internet_on()):
-            self.login_page.internet.config(text='Internet Connected')
-            self.page_one.internet.config(text='Internet Connected')
-
-            self.login_page.btn.config(command=lambda: self.clicked(self.login_page.Link.get()))
-
-            self.page_one.button1.config(command=lambda: self.page_one.submit(self.page_one.CFnum.get(), self.page_one.item_iid, self.page_one.main_url))
-            
-      
-            if(self.catsWebconn() == 200):
-                self.login_page.signal.config(bg='green')
-                self.page_one.signal.config(bg='green')
-            else:
-                self.login_page.signal.config(bg='red')
-                self.page_one.signal.config(bg='red')
-         
-        else:
-            self.login_page.internet.config(text='Internet Not Connected')
-            self.page_one.internet.config(text='Internet Not Connected')
-
-            self.login_page.btn.config(command=lambda: self.messagebox())
-            
-            self.page_one.button1.config(command=lambda: self.messagebox())
-           
-            #self.login_page.signal.config(bg='red')
-        '''
-        
 
         if not self.running:
             # This is the brutal stop of the system. You may want to do
@@ -658,7 +569,7 @@ class ThreadedClient:
             print('Logged in', site, loginMsg, userName, url, flag, fileFlag )
 
             if flag:
-                self.login_page.message.config(text='Please copy your CATSWeb logged in url:', font = ('Helvetica','11'), foreground="#638213", background="#FFFFFF")
+                self.login_page.message.config(text='Please insert your CATSWeb logged in url:', font = ('Helvetica','11'), foreground="#638213", background="#FFFFFF")
                 self.login_page.queue.put(url)
                 self.login_page.userNameQueue.put(userName)
                 self.page_one.CFnum.focus()
@@ -700,6 +611,10 @@ class ThreadedClient:
                 print('Invalid login, please try again.')
                 print('----------------------------------------')
 
+            self.login_page.loginStatusMsg.config(text='')
+
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
             batch_file = '\\\\'.join(os.path.join(current_folder,"killPhantom.bat").split('\\'))
 
@@ -708,10 +623,11 @@ class ThreadedClient:
                 messagebox.showinfo('Error!','killPhantom.bat file not found')
 
             else:
-                Popen(batch_file)
+                #Popen(batch_file)
+                #subprocess.call("cscript phantom.vbs", startupinfo=si) 
+                subprocess.call("killPhantom.bat", startupinfo=si) 
 
             self.running = 0
-            self.login_page.loginStatusMsg.config(text='')
     
 
 class ThreadedTask(threading.Thread):
