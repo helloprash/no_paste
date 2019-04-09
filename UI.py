@@ -645,7 +645,7 @@ class ThreadedTask(threading.Thread):
 
     def run(self):
         sessionFlag, CF_number, statusMsg, statusFlag, fileFlag = complaint_handler.complaintProcess(self.CFnum, self.main_url)
-
+        print(sessionFlag, CF_number, statusMsg, statusFlag, fileFlag)
         if not fileFlag:
             messagebox.showinfo('Error!','phantomjs.exe file not found')
             self.page_one.logout()
