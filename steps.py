@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
 import urllib3
+import re
 from time import sleep
 
 def actionSubmit(browser,ID):
@@ -115,7 +116,7 @@ def checkValidation(htmlSource):
         print(e)
         
 
-def step90(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step90(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:    
         try:
@@ -139,7 +140,7 @@ def step90(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', 
             browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
             browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
 
-            CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+            CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productList = productList, username=username,IR=IR,IRnum=IRnum)
             return CFnum, closeMsg, closeFlag
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
@@ -157,11 +158,11 @@ def step90(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', 
         except Exception as e:
             return CFnum, e, False
 
-    CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+    CFnum, closeMsg, closeFlag = step140(browser, CFnum, RDPC=RDPC, productList = productList, username=username,IR=IR,IRnum=IRnum)
     return CFnum, closeMsg, closeFlag
 
 
-def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:
         try:
@@ -202,35 +203,6 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
             if not IR and productLine == 'IOL':
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
                 selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
-            
-            elif (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
-            or (not IR and (RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
-                if not IR:
-                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
-                    selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
-                else:
-                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-                    
-                Reason_for_no_CAPA = 'Other, describe in CAPA Comments'
-                no_CAPA_comments = 'Previously Investigated Complaint per LIB90002'
-                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").clear() #Other(Reason for no CAPA comments)
-                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").send_keys(no_CAPA_comments)
-
-                
-            elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productType == 'Patient Interface') and (serialNum[0] == '6'):
-                if not IR:
-                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
-                    selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
-                else:
-                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-
-                Complaint_trend_similar = 'Other (explain in comments)'
-                complaint_trend_comments = 'Due to an increase in PI complaints, NR-0099700 was opened to address this issue.'
-                precedent_CAPA = 'NR-0099700'
-                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").clear() #Complaint trend comments
-                browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").send_keys(complaint_trend_comments)
-                browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
-                browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
 
             elif IR:
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
@@ -250,7 +222,49 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
 
                 browser.find_element_by_xpath("//textarea[contains(@id,'CTRLStandardMemo001')]").send_keys(initial_report) #initial report
 
-            else:
+            elif len(productList) == 1:
+                print('Single Product')
+                if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == '0180-1201' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-14' or productList[1].productFormula == '0180-1401' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')) \
+            or (not IR and (RDPC == 'Fluid Catchment Filled') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')):
+                    if not IR:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                        selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+                    else:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+                        
+                    Reason_for_no_CAPA = 'Other, describe in CAPA Comments'
+                    no_CAPA_comments = 'Previously Investigated Complaint per LIB90002'
+                    browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").clear() #Other(Reason for no CAPA comments)
+                    browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo014']").send_keys(no_CAPA_comments)
+
+
+                elif not IR and ((productLine == 'Phaco' and productList[1].productType == 'Disposable Tubing') or (productLine == 'LVC' and productList[1].productType == 'Patient Interface')) and re.search('[a-zA-Z]', productList[1].serialNum):
+                    print('Inside Phaco part')
+                    if not IR:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                        selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+                    else:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+
+
+                elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productList[1].productType == 'Patient Interface') and (productList[1].serialNum[0] == '6'):
+                    if not IR:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                        selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
+                    else:
+                        selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+
+                    Complaint_trend_similar = 'Other (explain in comments)'
+                    complaint_trend_comments = 'CAPA-008898 was opened to address this issue'
+                    precedent_CAPA = 'CAPA-008898'
+                    browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").clear() #Complaint trend comments
+                    browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").send_keys(complaint_trend_comments)
+                    browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
+                    browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
+
+
+            elif len(productList) > 1:
+                print('Multiple Product')
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
                 
             browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').clear() #Final/Summary Report
@@ -272,7 +286,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
             selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['Closer Review in Process']) #Next Action
             browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
             browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
-            CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+            CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productList = productList, username=username,IR=IR,IRnum=IRnum)
             return CFnum, closeMsg, closeFlag
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError) as e:
@@ -290,10 +304,10 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
         except Exception as e:
             return CFnum, e, False
 
-    CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+    CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productList = productList, username=username,IR=IR,IRnum=IRnum)
     return CFnum, closeMsg, closeFlag
 
-def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX', productType = 'XXXX', productFormula = 'XXXX',serialNum='XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
+def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX', username = 'XXXX',IR = False,IRnum = 'XXXX'):
     url = browser.current_url
     while True:    
         try:
@@ -306,8 +320,11 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
             if step == '999':
                 break
                 
-            print(productCWID)
-            productRefresh(browser, CFnum, productCWID)
+            for count, product in enumerate(productList):
+                print(productList[count+1].productCWID)
+                if not productRefresh(browser, CFnum, productList[count+1].productCWID):
+                    return CFnum, 'Please select product manufacturer', False
+
             pRE(browser,CFnum)
 
             browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
@@ -336,6 +353,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productCWID='XXXX',
             #return CFnum, 'Page load error', False    
         
         except Exception as e:
+            print('CATSWeb Error ',e)
             return CFnum, 'CatsWeb Error', False
 
     sleep(3)
@@ -371,9 +389,22 @@ def productRefresh(browser, CFnum, productCWID):
     if productCWID:
         print('Here productRefresh')
         actionSubmit(browser,productCWID)
+
+        soup = BS(browser.page_source, "lxml")
+        tables = soup.find_all('table',{'id':'TBCALogForm'})
+        td = [tr.find_all('td', {'id':'TDStandardText033'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        prodMfr = data[0].text.strip()
+        print(prodMfr+' '+str(len(prodMfr)))
+        if len(prodMfr) == 0:
+            return False
+
         browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit 
         browser.find_element_by_xpath('//*[@id="CTRLRELOAD"]').click() #Refresh product manufacturer
         browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('Updated Mfr')
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
         actionSubmit(browser,CFnum)
+        return True
         
