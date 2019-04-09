@@ -15,6 +15,15 @@ import steps
 
 current_folder = os.getcwd()
 
+class Product:
+    no_of_products = 0
+    def __init__(self,productType,productFormula,serialNum,productCWID):
+        self.productType = productType
+        self.productFormula = productFormula
+        self.serialNum = serialNum
+        self.productCWID = productCWID
+        Product.no_of_products += 1
+
 def checkCM(htmlSource):
     soup = BS(htmlSource, "lxml")
     bold = soup.find_all('b')
@@ -73,6 +82,8 @@ def actionSubmit(browser,ID):
     
 def getCFDetails(htmlSource):
     username = 'no user'
+    RPC = 'no RPC'
+    PTC = 'no PTC'
     RDPC = 'No RDPC'
     malfunction_code = 'No Malfunc'
     medical_event = 'No ME'
@@ -113,6 +124,14 @@ def getCFDetails(htmlSource):
                 data = [each.find('font') for each in eachtd]
         step = data[0].text.strip()
 
+        #Reported Patient Code
+        td = [tr.find_all('td', {'id':'TDStandardMemo018'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        RPC = data[0].text.strip()
+        
+
         #RDPC
         td = [tr.find_all('td', {'id':'TDStandardMemo013'}) for tr in tables[0].find_all('tr')]
         for eachtd in td:
@@ -120,14 +139,20 @@ def getCFDetails(htmlSource):
                 data = [each.find('font') for each in eachtd]
         RDPC = data[0].text.strip()
 
-
         #Malfunction Code
         td = [tr.find_all('td', {'id':'TDStandardMemo020'}) for tr in tables[0].find_all('tr')]
         for eachtd in td:
             if eachtd:
                 data = [each.find('font') for each in eachtd]
-
         malfunction_code = data[0].text.strip()
+
+        #Patient Treatment Code
+        td = [tr.find_all('td', {'id':'TDStandardMemo019'}) for tr in tables[0].find_all('tr')]
+        for eachtd in td:
+            if eachtd:
+                data = [each.find('font') for each in eachtd]
+        PTC = data[0].text.strip()
+
 
         #Product Line
         td = [tr.find_all('td', {'id':'TDStandardText011'}) for tr in tables[0].find_all('tr')]
@@ -144,29 +169,42 @@ def getCFDetails(htmlSource):
             next_center_tag = center_tag.findNext('center').findNext('center')
             tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
 
+            productList = dict()
+            
             prodCount = [tr for tr in tables[0].find_all('tr')]
             print(len(prodCount))
 
-            if len(prodCount) == 2:
-                td = [tr.find_all('td', {'id':'TDRowItem16'}) for tr in tables[0].find_all('tr')]
-                td1 = [tr.find_all('td', {'id':'TDRowItem14'}) for tr in tables[0].find_all('tr')]
-                td2 = [tr.find_all('td', {'id':'TDRowItem19'}) for tr in tables[0].find_all('tr')]
-                td3 = [tr.find_all('td', {'id':'TDRowItem11'}) for tr in tables[0].find_all('tr')]
+            for i in range(1, len(prodCount)):
+                print('i',i)
+                td = [tr.find_all('td', {'id':'TDRowItem{}6'.format(i)}) for tr in tables[0].find_all('tr')]
+                td1 = [tr.find_all('td', {'id':'TDRowItem{}4'.format(i)}) for tr in tables[0].find_all('tr')]
+                td2 = [tr.find_all('td', {'id':'TDRowItem{}9'.format(i)}) for tr in tables[0].find_all('tr')]
+                td3 = [tr.find_all('td', {'id':'TDRowItem{}1'.format(i)}) for tr in tables[0].find_all('tr')]
+
                 for eachtd, eachtd1, eachtd2, eachtd3 in zip(td,td1,td2,td3):
+                    
                     if (eachtd, eachtd1, eachtd2, eachtd3):
-                        data = [each.find('font') for each in eachtd]
+                        data = [each.find('font') for each in eachtd if each]
                         data1 = [each.find('font') for each in eachtd1]
                         data2 = [each.find('font') for each in eachtd2]
                         data3 = [each.find('font') for each in eachtd3]
-                productFormula = data[0].text.strip()
-                productType = data1[0].text.strip()
-                serialNum = data2[0].text.strip()
-                productCWID = data3[0].text.strip()
-                productCount = True
 
-            else:
-                productCount = False
+                        if data:
+                            productFormula = data[0].text.strip()
 
+                        if data1:
+                            productType = data1[0].text.strip()
+
+                        if data2:
+                            serialNum = data2[0].text.strip()
+
+                        if data3:
+                            productCWID = data3[0].text.strip()
+                                 
+                #print(productFormula,productType,serialNum,productCWID)        
+                productList[i] = Product(productType,productFormula,serialNum,productCWID)
+
+                    
         except AttributeError:
             productFormula = 'No pFormula'
             productType = 'No pType'
@@ -244,10 +282,10 @@ def getCFDetails(htmlSource):
             IRstep = 'XX'
             IRnum = 'XXXX'
         
-        return(True,username,RDPC,malfunction_code,medical_event,pREflag,step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+        return(True,username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
     except Exception as err:
         print('Here error',err)
-        return(False, username,RDPC,malfunction_code,medical_event,pREflag,step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+        return(False, username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
 
 
 def Login(url, site):
@@ -366,7 +404,7 @@ def preview(CFnum, main_url):
 
 
 def complaintProcess(CFnum, url):
-    print('inside complaintProcess', url)
+    print('inside complaintProcess', CFnum, url)
     pjs_file = '\\\\'.join(os.path.join(current_folder,"phantomjs.exe").split('\\'))
     statusMsg = '' 
     statusFlag = False
@@ -411,8 +449,10 @@ def complaintProcess(CFnum, url):
 
             browser = actionSubmit(browser,CFnum)
 
-            (flag,username,RDPC,malfunction_code,medical_event,pREflag,current_step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
-            print(flag, username,RDPC,malfunction_code,medical_event,pREflag,current_step,productLine,productType,productFormula,serialNum,productCWID,productCount,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+            (flag,username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,current_step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
+            print(flag, username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,current_step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+            print('PTC ', PTC)
+            print('RPC ',RPC)
             break
 
         except (urllib3.exceptions.TimeoutError, urllib3.exceptions.ReadTimeoutError):
@@ -453,9 +493,9 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum,'Medical event is Yes. Cannot process', False, fileFlag)
 
-    elif not productCount:
+    elif len(productList) == 0:
         browser.quit()
-        return (True, CFnum,'More than two or no product records. Cannot close', False, fileFlag)
+        return (True, CFnum,'No Product record found', False, fileFlag)
 
     elif len(RDPC) == 0:
         browser.quit()
@@ -469,6 +509,14 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum,'Cannot close CF with a Malfunction code', False, fileFlag)
 
+    elif RPC.lower() != 'Not applicable'.lower():
+        browser.quit()
+        return (True, CFnum,'Cannot close CF with a Reported Patient Code', False, fileFlag)
+
+    elif PTC.lower() != 'Not applicable'.lower():
+        browser.quit()
+        return (True, CFnum,'Cannot close CF with a Patient Treatment Code', False, fileFlag)
+
     elif fieldServiceFlag and (fieldServiceStatus.lower() != 'Closed'.lower()):
         browser.quit()
         return (True, CFnum,'Please close the Field Service Record', False, fileFlag)
@@ -481,60 +529,84 @@ def complaintProcess(CFnum, url):
         browser.quit()
         return (True, CFnum, 'IR still open in step {}'.format(IRstep), False, fileFlag)
 
-    elif len(productFormula) == 0 or productFormula.lower() == 'unknown':
-        browser.quit()
-        return (True, CFnum, 'Error! Please select Formula/Model Number in product record', False, fileFlag)
-
-    elif len(productType) == 0 or productType.lower() == 'unknown':
-        browser.quit()
-        return (True, CFnum, 'Error! Please select Product Type in product record', False, fileFlag)   
-
     elif RDTFlag:
         browser.quit()
         return (True, CFnum, 'RDT present. Cannot close', False, fileFlag)
 
-    else:
+    elif productList:
+        print('passed')
+        for count, product in enumerate(productList):
+            if len(productList[count+1].productFormula) == 0 or productList[count+1].productFormula.lower() == 'unknown':
+                browser.quit()
+                return (True, CFnum, 'Error! Formula/Model Number not found. Please update/close manually', False, fileFlag)
+
+            elif len(productList[count+1].productType) == 0 or productList[count+1].productType.lower() == 'unknown':
+                browser.quit()
+                return (True, CFnum, 'Error! Product Type not found. Please update/close manually', False, fileFlag) 
+
+
+    #Complaint Processing
         try:
             if not IR and productLine == 'IOL':
                 if current_step == '140':
-                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                 else:
-                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                     
                 browser.quit()
                 return (True, CFnum, statusMsg, statusFlag, fileFlag) 
 
-            elif not IR and ((productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
-                if (serialNum[0] == '6'):
+            elif len(productList) == 1:
+                print('Single Product')
+
+                if not IR and ((productLine == 'Phaco' and productList[1].productType == 'Disposable Tubing') or (productLine == 'LVC' and productList[1].productType == 'Patient Interface')) and re.search('[a-zA-Z]', productList[1].serialNum):
+                    print('Inside Phaco part')
                     if current_step == '140':
-                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                     else:
-                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-                    
+                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        
                     browser.quit()
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)
-                else:
-                    browser.quit()
-                    return (True, CFnum, 'Error! LOT number does not start with 6 for PI return', False, fileFlag)   
+
+
+                elif not IR and ((productList[1].productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
+                    if (productList[1].serialNum[0] == '6') or re.search('[a-zA-Z]', productList[1].serialNum):
+                        if current_step == '140':
+                            CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        else:
+                            CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        
+                        browser.quit()
+                        return (True, CFnum, statusMsg, statusFlag, fileFlag)
+                    else:
+                        browser.quit()
+                        return (True, CFnum, 'Error! LOT number does not start with 6 for PI return', False, fileFlag)   
             
-            elif not IR and ((RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productFormula == 'LOI' or productFormula == '0180-1201' or productFormula == 'LOI-12' or productFormula == 'LOI-14' or productFormula == '0180-1401')) \
-            or ((RDPC == 'Fluid Catchment Filled') and (productFormula == 'LOI')):
-                print('Inside else part')
-                if current_step == '140':
-                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-                else:
-                    CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
-                    
-                browser.quit()
-                return (True, CFnum, statusMsg, statusFlag, fileFlag) 
+                elif not IR and ((RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == '0180-1201' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-14' or productList[1].productFormula == '0180-1401' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F'))\
+                or ((RDPC == 'Fluid Catchment Filled') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')):
+                    print('Inside else part')
+                    if current_step == '140':
+                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                    else:
+                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        
+                    browser.quit()
+                    return (True, CFnum, statusMsg, statusFlag, fileFlag)  
+
+
             else:
-                CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productCWID=productCWID, productType=productType, productFormula=productFormula, serialNum=serialNum, username=username,IR=IR,IRnum=IRnum)
+                print('Multiple product')
+                CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                 print(CFnum, statusMsg, statusFlag)
                 browser.quit()
                 return (True, CFnum, statusMsg, statusFlag, fileFlag)
 
+
         except KeyError:
             browser.quit()
-            return (True, CFnum, 'This file cannot be closed as Investigation Not Required', False, fileFlag)
+            return (True, CFnum, 'This file cannot be closed as Investigation Not Required', False, fileFlag)  
+
+    
 
         
