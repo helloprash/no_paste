@@ -101,6 +101,8 @@ def getCFDetails(htmlSource):
     IR = False
     IRstep = 'No IRStep'
     IRnum = 'No IRNum'
+    productList = 'No Products'
+
     try:
         soup = BS(htmlSource, "lxml")
         #soup = BS(open(htmlSource,encoding="utf8"), "lxml")
@@ -283,6 +285,7 @@ def getCFDetails(htmlSource):
             IRnum = 'XXXX'
         
         return(True,username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
+    
     except Exception as err:
         print('Here error',err)
         return(False, username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
@@ -448,7 +451,7 @@ def complaintProcess(CFnum, url):
                 browser.find_element_by_xpath('//*[@id="TDDisplayPart004"]/font/a/font').click()
 
             browser = actionSubmit(browser,CFnum)
-
+            print("Printed")
             (flag,username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,current_step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum) = getCFDetails(browser.page_source)
             print(flag, username,RPC,RDPC,malfunction_code,PTC,medical_event,pREflag,current_step,productLine,productList,fieldServiceFlag,fieldServiceStatus,RDTFlag,IR,IRstep,IRnum)
             print('PTC ', PTC)
@@ -467,7 +470,8 @@ def complaintProcess(CFnum, url):
             print(allError)
             return (True, CFnum, 'Page load error', False, fileFlag)
 
-        except:
+        except Exception as e:
+            print('new error ',e)
             continue
 
 
@@ -594,6 +598,11 @@ def complaintProcess(CFnum, url):
                     browser.quit()
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)  
 
+                else:
+                    CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                    print(CFnum, statusMsg, statusFlag)
+                    browser.quit()
+                    return (True, CFnum, statusMsg, statusFlag, fileFlag)
 
             else:
                 print('Multiple product')
