@@ -101,7 +101,7 @@ def getCFDetails(htmlSource):
     IR = False
     IRstep = 'No IRStep'
     IRnum = 'No IRNum'
-    productList = 'No Products'
+    productList = dict()
 
     try:
         soup = BS(htmlSource, "lxml")
@@ -171,7 +171,6 @@ def getCFDetails(htmlSource):
             next_center_tag = center_tag.findNext('center').findNext('center')
             tables = next_center_tag.find_all('table',{'id':'TBGenericRecs0'})
 
-            productList = dict()
             
             prodCount = [tr for tr in tables[0].find_all('tr')]
             print(len(prodCount))
@@ -427,14 +426,14 @@ def complaintProcess(CFnum, url):
     #chrome_options.add_argument("--window-size=1920x1080")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("disable-extensions")
-   
-    browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
     '''
+
     
     while True:
         try:
             print('Not Here')
             browser = webdriver.PhantomJS(executable_path = pjs_file, desired_capabilities={'phantomjs.page.settings.resourceTimeout': '5000'})
+            #browser = webdriver.Chrome(pjs_file, chrome_options=chrome_options)
             browser.implicitly_wait(3)
             browser.set_page_load_timeout(100)
 
@@ -473,7 +472,6 @@ def complaintProcess(CFnum, url):
         except Exception as e:
             print('new error ',e)
             continue
-
 
     process_steps = {
                         '050':steps.step90,
@@ -575,6 +573,7 @@ def complaintProcess(CFnum, url):
 
 
                 elif not IR and ((productList[1].productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
+                    print("inside PI")
                     if (productList[1].serialNum[0] == '6') or re.search('[a-zA-Z]', productList[1].serialNum):
                         if current_step == '140':
                             CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
@@ -584,12 +583,15 @@ def complaintProcess(CFnum, url):
                         browser.quit()
                         return (True, CFnum, statusMsg, statusFlag, fileFlag)
                     else:
+                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        print(CFnum, statusMsg, statusFlag)
                         browser.quit()
-                        return (True, CFnum, 'Error! LOT number does not start with 6 for PI return', False, fileFlag)   
+                        return (True, CFnum, statusMsg, statusFlag, fileFlag)
+                        
             
                 elif not IR and ((RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == '0180-1201' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-14' or productList[1].productFormula == '0180-1401' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F'))\
                 or ((RDPC == 'Fluid Catchment Filled') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')):
-                    print('Inside else part')
+                    print('Inside LOI part')
                     if current_step == '140':
                         CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                     else:
@@ -599,6 +601,7 @@ def complaintProcess(CFnum, url):
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)  
 
                 else:
+                    print('Inside Other')
                     CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
                     print(CFnum, statusMsg, statusFlag)
                     browser.quit()
