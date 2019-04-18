@@ -226,6 +226,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
                 print('Single Product')
                 if (not IR and (RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == '0180-1201' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-14' or productList[1].productFormula == '0180-1401' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')) \
             or (not IR and (RDPC == 'Fluid Catchment Filled') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')):
+                    print('LOI 140')
                     if not IR:
                         selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
                         selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
@@ -248,6 +249,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
 
 
                 elif not IR and RDPC == 'Suction - lack prior to laser fire' and (productList[1].productType == 'Patient Interface') and (productList[1].serialNum[0] == '6'):
+                    print('PI 140')
                     if not IR:
                         selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
                         selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
@@ -262,6 +264,9 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
                     browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
                     browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
 
+                else:
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
+
 
             elif len(productList) > 1:
                 print('Multiple Product')
@@ -270,9 +275,13 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').clear() #Final/Summary Report
             browser.find_element_by_xpath('//*[@id="CTRLStandardMemo004"]').send_keys(summary)
             selectMultiple(browser,'//*[@id="CTRLStandardText002"]',[Product_Deficiency_Identified]) #Product Deficiency Identified?
+            print('Product_Deficiency_Identified ',Product_Deficiency_Identified)
             selectMultiple(browser,'//*[@id="CTRLStandardText018"]', [Complaint_trend_similar]) #Complaint trend similar?
+            print('Complaint_trend_similar ',Complaint_trend_similar)
             selectMultiple(browser,'//*[@id="CTRLStandardText054"]', [Internal_CAPA_requested]) #Internal CAPA requested
+            print('Internal_CAPA_requested ',Internal_CAPA_requested)
             selectMultiple(browser,'//*[@id="CTRLStandardText058"]', [Reason_for_no_CAPA]) #Reason for no CAPA
+            print('Reason_for_no_CAPA ',Reason_for_no_CAPA)
             
             checkbox = browser.find_element_by_xpath('//*[@id="CTRLStandardYesNo020"]') #Complaint ready for closing
             if checkbox.is_selected():
@@ -286,6 +295,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             selectMultiple(browser,'//*[@id="CTRLStandardMemo015"]', ['Closer Review in Process']) #Next Action
             browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
             browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+            print('Submitted')
             CFnum, closeMsg, closeFlag = step999(browser, CFnum, RDPC=RDPC, productList = productList, username=username,IR=IR,IRnum=IRnum)
             return CFnum, closeMsg, closeFlag
 
