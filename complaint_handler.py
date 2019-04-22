@@ -572,22 +572,15 @@ def complaintProcess(CFnum, url):
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)
 
 
-                elif not IR and ((productList[1].productType == 'Patient Interface') and (RDPC == 'Suction - lack prior to laser fire')):
-                    print("inside PI")
-                    if (productList[1].serialNum[0] == '6') or re.search('[a-zA-Z]', productList[1].serialNum):
-                        if current_step == '140':
-                            CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
-                        else:
-                            CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
-                        
-                        browser.quit()
-                        return (True, CFnum, statusMsg, statusFlag, fileFlag)
-                    else:
+                elif not IR and productList[1].productType == 'Patient Interface' and ((productList[1].serialNum[0] == '6' and RDPC == 'Suction - lack prior to laser fire') or re.search('[a-zA-Z]', productList[1].serialNum) or (productList[1].serialNum[0] != '6' and RDPC != 'Suction - lack prior to laser fire')):
+                    if current_step == '140':
                         CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
-                        print(CFnum, statusMsg, statusFlag)
-                        browser.quit()
-                        return (True, CFnum, statusMsg, statusFlag, fileFlag)
-                        
+                    else:
+                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                    
+                    browser.quit()
+                    return (True, CFnum, statusMsg, statusFlag, fileFlag)
+    
             
                 elif not IR and ((RDPC == 'Failure to Capture' or RDPC == 'Loss of Capture') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == '0180-1201' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-14' or productList[1].productFormula == '0180-1401' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F'))\
                 or ((RDPC == 'Fluid Catchment Filled') and (productList[1].productFormula == 'LOI' or productList[1].productFormula == 'LOI-12' or productList[1].productFormula == 'LOI-12-BP' or productList[1].productFormula == 'LOI-BP' or productList[1].productFormula == 'LOI-F')):
@@ -599,6 +592,7 @@ def complaintProcess(CFnum, url):
                         
                     browser.quit()
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)  
+
 
                 else:
                     print('Inside Other')
