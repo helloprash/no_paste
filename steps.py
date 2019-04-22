@@ -166,6 +166,11 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
     url = browser.current_url
     while True:
         try:
+            ifNoExplain = 'XXXX'
+            CAR_comments = 'XXXX'
+            CA = 'XXXX'
+            OtherDetails = 'XXXX'
+
             #Step 140
             print('Here 140')
             if browser.current_url != url:
@@ -176,6 +181,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             if step == '140':
                 break
 
+            #get incident date
             soup = BS(browser.page_source, "lxml")
             tables = soup.find_all('table',{'id':'TBCALogForm'})
             td = [tr.find_all('td', {'id':'TDStandardDate001'}) for tr in tables[0].find_all('tr')]
@@ -186,6 +192,46 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
 
             print(incident_date)
 
+            #get CAR 
+            if IR:
+                actionSubmit(browser,IRnum)
+                soup = BS(htmlSource, "lxml")
+                #soup = BS(open('CAR.html',encoding="utf8"), "lxml")
+                center = soup.find_all('center')
+                tables = soup.find_all('table',{'id':'TBCALogForm'})
+
+                #CAR Comments
+                td = [tr.find_all('td', {'id':'TDMemo2'}) for tr in tables[0].find_all('tr')]
+                for eachtd in td:
+                    if eachtd:
+                        data = [each.find('font') for each in eachtd]
+                CAR_comments = data[0].text.strip()
+
+                #Will C/A be taken at mfr site?
+                td = [tr.find_all('td', {'id':'TDStandardText025'}) for tr in tables[0].find_all('tr')]
+                for eachtd in td:
+                    if eachtd:
+                        data = [each.find('font') for each in eachtd]
+                CA = data[0].text.strip()
+
+                #If No, Explain
+                if CA.lower() == 'no':
+                    td = [tr.find_all('td', {'id':'TDStandardMemo018'}) for tr in tables[0].find_all('tr')]
+                    for eachtd in td:
+                        if eachtd:
+                            data = [each.find('font') for each in eachtd]
+                    ifNoExplain = data[0].text.strip()
+
+                #Other Details
+                td = [tr.find_all('td', {'id':'TDStandardText068'}) for tr in tables[0].find_all('tr')]
+                for eachtd in td:
+                    if eachtd:
+                        data = [each.find('font') for each in eachtd]
+                OtherDetails = data[0].text.strip()
+
+                actionSubmit(browser,CFnum)
+
+            
             browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
 
             if len(incident_date) == 0 or incident_date == '12/31/2999': 
@@ -221,6 +267,19 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
         '''.format(IRnum)
 
                 browser.find_element_by_xpath("//textarea[contains(@id,'CTRLStandardMemo001')]").send_keys(initial_report) #initial report
+
+                if ifNoExplain.lower() == 'Known issue - already addressed in a Corrective Action'.lower() and len(CAR_comments) != 0:
+                    Product_Deficiency_Identified = 'Yes'
+                    if 'CAPA'.lower() in CAR_comments.lower() or 'NR'.lower() in CAR_comments.lower() or 'pER'.lower() in CAR_comments.lower():
+                        browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(CAR_comments)
+
+                if 'Design'.lower() in OtherDetails.lower():
+                    selectMultiple(browser,'//*[@id="CTRLStandardText024"]', ['DESIGN DEFICIENCY'])
+
+                elif 'Manufacturing'.lower() in OtherDetails.lower() or 'Mfg'.lower() in OtherDetails.lower():
+                    selectMultiple(browser,'//*[@id="CTRLStandardText024"]', ['MANUFACTURING DEFICIENCY'])
+
+                
 
             elif len(productList) == 1:
                 print('Single Product')
@@ -263,6 +322,10 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
                     browser.find_element_by_xpath("//textarea[@id='CTRLStandardMemo016']").send_keys(complaint_trend_comments)
                     browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").clear() #precedent CAPA
                     browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(precedent_CAPA)
+
+                elif not IR and productList[1].productType == 'Patient Interface' and (re.search('[a-zA-Z]', productList[1].serialNum) or (productList[1].serialNum[0] != '6' and RDPC != 'Suction - lack prior to laser fire')):
+                    selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Investigation Not Required']) #Workflow decision
+                    selectMultiple(browser,'//*[@id="CTRLStandardText022"]',['Per SOP']) #Reason Code
 
                 else:
                     selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
