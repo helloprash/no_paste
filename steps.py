@@ -193,9 +193,10 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             print(incident_date)
 
             #get CAR 
+            print('Inside IR')
             if IR:
                 actionSubmit(browser,IRnum)
-                soup = BS(htmlSource, "lxml")
+                soup = BS(browser.page_source, "lxml")
                 #soup = BS(open('CAR.html',encoding="utf8"), "lxml")
                 center = soup.find_all('center')
                 tables = soup.find_all('table',{'id':'TBCALogForm'})
@@ -229,6 +230,8 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
                         data = [each.find('font') for each in eachtd]
                 OtherDetails = data[0].text.strip()
 
+                print(ifNoExplain, CAR_comments, CA, OtherDetails)
+
                 actionSubmit(browser,CFnum)
 
             
@@ -240,7 +243,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             else:
                 selectMultiple(browser,"//select[contains(@id,'CTRLShortText2')]",['Known']) #Incident date
                 
-            summary = 'This complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
+            summary = '\n\nThis complaint meets the criteria for no further investigation per Johnson & Johnson Surgical Vision Complaint Handling procedures. There is no indication of injury, and this event has been assessed as not being reportable. These types of complaints will continue to be monitored through tracking and trending.'
             Product_Deficiency_Identified = 'No'
             Complaint_trend_similar = 'Yes'
             Internal_CAPA_requested = 'No'
@@ -252,7 +255,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
 
             elif IR:
                 selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Request Review of Resolved Complaint']) #Workflow decision
-                initial_report = '''\nSUMMARY OF REPORTED EVENT:
+                initial_report = '''\n\nSUMMARY OF REPORTED EVENT:
         It was reported that there was a {}. No patient contact was reported.
         '''.format(RDPC)
 
@@ -270,6 +273,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
 
                 if ifNoExplain.lower() == 'Known issue - already addressed in a Corrective Action'.lower() and len(CAR_comments) != 0:
                     Product_Deficiency_Identified = 'Yes'
+                    Reason_for_no_CAPA = 'Deficiency already investigated (provide REF # in Precedent CAPA Number field)'
                     if 'CAPA'.lower() in CAR_comments.lower() or 'NR'.lower() in CAR_comments.lower() or 'pER'.lower() in CAR_comments.lower():
                         browser.find_element_by_xpath("//input[@id='CTRLStandardText059']").send_keys(CAR_comments)
 
