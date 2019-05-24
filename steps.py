@@ -406,7 +406,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             browser.find_element_by_xpath('//*[@id="CTRLStandardDate008"]').clear() #Next Action date
             browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
 
-            sleep(3)
+            sleep(2)
             #closeMsg, closeFlag = checkClosure(browser.page_source)
             closeFlag, closeMsg = checkValidation(browser.page_source)
 
@@ -429,7 +429,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             print('CATSWeb Error ',e)
             return CFnum, 'CatsWeb Error', False
 
-    sleep(3)
+    sleep(2)
     #closeMsg, closeFlag = checkClosure(browser.page_source)
     
     closeFlag, closeMsg = checkValidation(browser.page_source)
