@@ -213,6 +213,7 @@ def getCFDetails(htmlSource):
             productCWID = 'No prodCWID'
             productCount = False
 
+
         #pRE
         try:
             pREflag = False
@@ -246,6 +247,7 @@ def getCFDetails(htmlSource):
         except Exception as e:
             print(e)
         
+
         #Field Service
         try:
             ir_tag = soup.find('font', face="Verdana", size="2", text='Field Service').parent
@@ -261,6 +263,7 @@ def getCFDetails(htmlSource):
         except AttributeError:
             fieldServiceFlag = False
             fieldServiceStatus = 'No FSE'
+
 
         #Investigation report
         try:
