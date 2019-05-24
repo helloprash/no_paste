@@ -250,7 +250,8 @@ class PageOne(tk.Frame):
 
     def tree_select_event(self, event):
         self.item_iid = self.tree.selection()
-        print(self.item_iid)
+        for CF in self.item_iid:
+            print(CF, self.tree.item(CF)["tags"])
         
     def viewPreview(self, CFnum, item_iid, main_url):
         if not self.internet_on():
@@ -450,10 +451,12 @@ class PageOne(tk.Frame):
                     self.treeview.set(CFnum, 'Complaint Status', statusMsg)
                     self.treeview.item(CFnum, tags='Closed')
                     self.treeview.tag_configure('Closed', background='#51FE1A')
+                    print('Closed set')
                 else:
                     self.treeview.set(CFnum, 'Complaint Status', statusMsg)
                     self.treeview.item(CFnum, tags='Error')
-                    self.treeview.tag_configure('Error', background = '#FE3D29')
+                    self.treeview.tag_configure('Error', background='#FE3D29')
+                    print('Error set')
                 # Check contents of message and do whatever is needed. As a
                 # simple test, print it in real life, you would
                 # suitably update the GUI's display in a richer fashion).
