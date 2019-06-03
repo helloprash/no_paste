@@ -177,7 +177,7 @@ def step140(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             if browser.current_url != url:
                 browser.get(url)
             actionSubmit(browser,CFnum)
-            pRE(browser,CFnum,productList)
+            pRE(browser,CFnum)
 
             step = currentStep(browser.page_source)
             print(step)
@@ -394,11 +394,20 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             if browser.current_url != url:
                 browser.get(url)
             actionSubmit(browser,CFnum)
+
+            pRE(browser,CFnum)
+
             print('Here 999')
             step = currentStep(browser.page_source)
             print(step)
             if step == '999':
                 break
+
+            for count, product in enumerate(productList):
+                print(productList[count+1].productCWID)
+                if not productRefresh(browser, CFnum, productList[count+1].productCWID):
+                    return CFnum, 'Please select product manufacturer', False
+
 
             browser.find_element_by_xpath('//*[@id="TBTopTable"]/tbody/tr[3]/td/font/b/a[1]/font/b').click() #Edit
             selectMultiple(browser,'//*[@id="CTRLStandardText028"]', ['Close Complaint']) #Workflow Decision
@@ -426,8 +435,8 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
             #return CFnum, 'Page load error', False    
         
         except Exception as e:
-            print('CATSWeb Error ',e)
-            return CFnum, 'CatsWeb Error', False
+            print('Page load error ',e)
+            return CFnum, 'Page load error', False
 
     sleep(2)
     #closeMsg, closeFlag = checkClosure(browser.page_source)
@@ -438,8 +447,7 @@ def step999(browser,CFnum, RDPC = 'XXXX', productLine='XXX', productList = 'XXXX
     return CFnum, closeMsg, closeFlag
     
 
-def pRE(browser,CFnum,productList):
-
+def pRE(browser,CFnum):
     pREID = getpRE(browser.page_source)
     if pREID:
         actionSubmit(browser,pREID)
@@ -457,15 +465,9 @@ def pRE(browser,CFnum,productList):
         browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').clear()
         browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('pRE')
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
+        actionSubmit(browser,CFnum)
 
-    for count, product in enumerate(productList):
-        print(productList[count+1].productCWID)
-        if not productRefresh(browser, productList[count+1].productCWID):
-            return CFnum, 'Please select product manufacturer', False
-
-    actionSubmit(browser,CFnum)
-
-def productRefresh(browser, productCWID):
+def productRefresh(browser, CFnum, productCWID):
     if productCWID:
         print('Here productRefresh')
         actionSubmit(browser,productCWID)
@@ -485,6 +487,6 @@ def productRefresh(browser, productCWID):
         browser.find_element_by_xpath('//*[@id="CTRLRELOAD"]').click() #Refresh product manufacturer
         browser.find_element_by_xpath('//*[@id="CTRLReasonForEdit"]').send_keys('Updated Mfr')
         browser.find_element_by_xpath('//*[@id="CTRLSUBMIT"]').click() #Submit
-        #actionSubmit(browser,CFnum)
+        actionSubmit(browser,CFnum)
         return True
         
