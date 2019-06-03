@@ -574,6 +574,15 @@ def complaintProcess(CFnum, url):
                     browser.quit()
                     return (True, CFnum, statusMsg, statusFlag, fileFlag)
 
+                elif not IR and productLine == 'LCS' and RDPC == 'Patient Anatomy':
+                    if current_step == '140':
+                        CFnum, statusMsg, statusFlag = process_steps[current_step](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                    else:
+                        CFnum, statusMsg, statusFlag = process_steps['090'](browser, CFnum, RDPC=RDPC, productLine=productLine, productList = productList, username=username,IR=IR,IRnum=IRnum)
+                        
+                    browser.quit()
+                    return (True, CFnum, statusMsg, statusFlag, fileFlag)
+
 
                 elif not IR and productList[1].productType == 'Patient Interface' and ((productList[1].serialNum[0] == '6' and RDPC == 'Suction - lack prior to laser fire') or re.search('[a-zA-Z]', productList[1].serialNum) or (productList[1].serialNum[0] != '6' and RDPC != 'Suction - lack prior to laser fire')):
                     if current_step == '140':
